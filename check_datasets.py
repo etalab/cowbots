@@ -579,7 +579,7 @@ def main():
                             ),
                         ),
                     empty_to_none,
-#                    not_none,
+                    not_none,
                     ),
                 revision_id = pipe(
                     cow_json_to_uuid,
