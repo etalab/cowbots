@@ -427,6 +427,74 @@ def main():
                     test_isinstance(bool),
                     test_equals(False),
                     ),
+                related = pipe(
+                    test_isinstance(list),
+                    uniform_sequence(
+                        pipe(
+                            test_isinstance(dict),
+                            struct(
+                                dict(
+                                    created = pipe(
+                                        cow_json_to_iso8601_datetime_str,
+                                        not_none,
+                                        ),
+                                    description = pipe(
+                                        cow_json_to_markdown,
+                                        not_none,
+                                        ),
+                                    featured = pipe(
+                                        test_isinstance(bool),
+                                        test_equals(False),
+                                        not_none,
+                                        ),
+                                    id = pipe(
+                                        cow_json_to_uuid,
+                                        not_none,
+                                        ),
+                                    image_url = pipe(
+                                        test_isinstance(basestring),
+                                        make_input_to_url(full = True),
+                                        not_none,
+                                        ),
+                                    owner_id = pipe(
+                                        cow_json_to_uuid,
+                                        not_none,
+                                        ),
+                                    title = pipe(
+                                        cow_json_to_title,
+                                        test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
+                                        not_none,
+                                        ),
+                                    type = pipe(
+                                        test_isinstance(basestring),
+                                        cleanup_line,
+                                        test_in([
+                                            u'api',
+                                            u'application',
+                                            u'idea',
+                                            u'news_article',
+                                            u'paper',
+                                            u'post',
+                                            u'visualization',
+                                            ]),
+                                        ),
+                                    url = pipe(
+                                        test_isinstance(basestring),
+                                        make_input_to_url(full = True),
+                                        not_none,
+                                        ),
+                                    view_count = pipe(
+                                        test_isinstance(int),
+                                        test_greater_or_equal(0),
+                                        not_none,
+                                        ),
+                                    ),
+                                ),
+                            not_none,
+                            ),
+                        ),
+                    empty_to_none,
+                    ),
                 resources = pipe(
                     test_isinstance(list),
                     uniform_sequence(
