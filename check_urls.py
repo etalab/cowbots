@@ -92,14 +92,40 @@ def check_dataset_urls(dataset, state = None):
         if error is not None:
             errors['url'] = error
 
+        related_links_errors = errors.get('related') or {}
+        for related_link_index, related_link in enumerate(dataset.get('related') or []):
+            related_link_index_str = str(related_link_index)
+            related_link_errors = related_links_errors.get(related_link_index_str) or {}
+
+            image_url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(
+                related_link.get('image_url'), state = state)
+            if error is not None:
+                related_link_errors['image_url'] = error
+
+            url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(related_link.get('url'),
+                state = state)
+            if error is not None:
+                related_link_errors['url'] = error
+
+            if related_link_errors:
+                related_links_errors[related_link_index_str] = related_link_errors
+            else:
+                related_links_errors.pop(related_link_index_str, None)
+        if related_links_errors:
+            errors['related'] = related_links_errors
+        if not errors:
+            errors = None
+
         resources_errors = errors.get('resources') or {}
         for resource_index, resource in enumerate(dataset.get('resources') or []):
             resource_index_str = str(resource_index)
             resource_errors = resources_errors.get(resource_index_str) or {}
+
             url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(resource.get('url'),
                 state = state)
             if error is not None:
                 resource_errors['url'] = error
+
             if resource_errors:
                 resources_errors[resource_index_str] = resource_errors
             else:
