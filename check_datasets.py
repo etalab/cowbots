@@ -186,6 +186,424 @@ cow_json_to_ids = pipe(
         ),
     )
 
+cow_json_to_verified_dataset = pipe(
+    test_isinstance(dict),
+    struct(
+        dict(
+            author = cow_json_to_title,
+            author_email = input_to_email,
+            draft_id = pipe(
+                cow_json_to_uuid,
+                not_none,
+                ),
+            errors = test_isinstance(dict),
+            extras = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                key = pipe(
+                                    cow_json_to_title,
+                                    not_none,
+                                    ),
+                                value = pipe(
+                                    test_isinstance(basestring),
+                                    cleanup_line,
+                                    not_none,
+                                    ),
+                                ),
+                                default = noop,
+                            ),
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                ),
+            groups = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                name = pipe(
+                                    cow_json_to_name,
+                                    not_none,
+                                    ),
+                                title = pipe(
+                                    cow_json_to_title,
+                                    not_none,
+                                    ),
+                                ),
+                            ),
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
+                ),
+            id = pipe(
+                cow_json_to_uuid,
+                not_none,
+                ),
+            isopen = pipe(
+                test_isinstance(bool),
+                test_equals(True),
+                not_none,
+                ),
+            license_id = pipe(
+                test_isinstance(basestring),
+                test_in([
+                    'cc-by',  # Creative Commons Attribution
+                    'cc-by-sa',  # Creative Commons Attribution Share-Alike
+                    'cc-zero',  # Creative Commons CCZero
+                    'fr-lo',  # Licence Ouverte / Open Licence
+                    'odc-by',  # Open Data Commons Attribution License
+                    'odc-odbl',  # Open Data Commons Open Database License (ODbL)
+                    'odc-pddl',  # Open Data Commons Public Domain Dedication and Licence (PDDL)
+                    'other-at',  # Other (Attribution)
+                    'other-open',  # Other (Open)
+                    'other-pd',  # Other (Public Domain)
+                    ]),
+                not_none,
+                ),
+            license_title = pipe(
+                test_isinstance(basestring),
+                cleanup_line,
+                not_none,
+                ),
+            license_url = pipe(
+                test_isinstance(basestring),
+                make_input_to_url(full = True),
+                not_none,
+                ),
+            maintainer = cow_json_to_title,
+            maintainer_email = input_to_email,
+            metadata_created = pipe(
+                cow_json_to_iso8601_date_str,
+                not_none,
+                ),
+            metadata_modified = pipe(
+                cow_json_to_iso8601_date_str,
+                not_none,
+                ),
+            name = pipe(
+                cow_json_to_name,
+                not_none,
+                ),
+            num_resources = pipe(
+                test_isinstance(int),
+                test_greater_or_equal(0),
+                ),
+            num_tags = pipe(
+                test_isinstance(int),
+                test_greater_or_equal(0),
+                ),
+            notes = pipe(
+                cow_json_to_markdown,
+                not_none,
+                ),
+            organization = test_isinstance(dict),
+            owner_org = cow_json_to_uuid,
+            private = pipe(
+                test_isinstance(bool),
+                test_equals(False),
+                ),
+            related = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                created = pipe(
+                                    cow_json_to_iso8601_datetime_str,
+                                    not_none,
+                                    ),
+                                description = pipe(
+                                    cow_json_to_markdown,
+                                    not_none,
+                                    ),
+                                featured = pipe(
+                                    test_isinstance(bool),
+                                    test_equals(False),
+                                    not_none,
+                                    ),
+                                id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                image_url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    not_none,
+                                    ),
+                                owner_id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                title = pipe(
+                                    cow_json_to_title,
+                                    test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
+                                    not_none,
+                                    ),
+                                type = pipe(
+                                    test_isinstance(basestring),
+                                    cleanup_line,
+                                    test_in([
+                                        u'api',
+                                        u'application',
+                                        u'idea',
+                                        u'news_article',
+                                        u'paper',
+                                        u'post',
+                                        u'visualization',
+                                        ]),
+                                    ),
+                                url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    not_none,
+                                    ),
+                                view_count = pipe(
+                                    test_isinstance(int),
+                                    test_greater_or_equal(0),
+                                    not_none,
+                                    ),
+                                ),
+                            ),
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                ),
+            resources = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                created = pipe(
+                                    cow_json_to_iso8601_date_str,
+                                    not_none,
+                                    ),
+                                description = pipe(
+                                    cow_json_to_markdown,
+                                    not_none,
+                                    ),
+                                format = pipe(
+                                    test_isinstance(basestring),
+                                    test(lambda format: format == format.lower(),
+                                        error = N_(u'Format must contain only lowercase characters')),
+                                    test_not_in(['xlsx'], error = N_(u'Invalid format; use "xls" instead')),
+#                                    test_in([
+#                                        'xls',
+#                                        ]),
+                                    not_none,
+                                    ),
+                                id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                last_modified = cow_json_to_iso8601_date_str,
+                                name = pipe(
+                                    cow_json_to_title,
+                                    not_none,
+                                    ),
+                                position = pipe(
+                                    test_isinstance(int),
+                                    test_greater_or_equal(0),
+                                    not_none,
+                                    ),
+                                resource_group_id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                revision_id = pipe(
+                                    cow_json_to_uuid,
+                                    not_none,
+                                    ),
+                                revision_timestamp = pipe(
+                                    cow_json_to_iso8601_datetime_str,
+                                    not_none,
+                                    ),
+                                state = pipe(
+                                    test_isinstance(basestring),
+                                    test_equals('active'),
+                                    ),
+                                tracking_summary = pipe(
+                                    test_isinstance(dict),
+                                    struct(
+                                        dict(
+                                            recent = pipe(
+                                                test_isinstance(int),
+                                                test_greater_or_equal(0),
+                                                not_none,
+                                                ),
+                                            total = pipe(
+                                                test_isinstance(int),
+                                                test_greater_or_equal(0),
+                                                not_none,
+                                                ),
+                                            ),
+                                        ),
+                                    not_none,
+                                    ),
+                                url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    not_none,
+                                    ),
+                                ),
+                            ),
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
+                ),
+            revision_id = pipe(
+                cow_json_to_uuid,
+                not_none,
+                ),
+            revision_timestamp = pipe(
+                cow_json_to_iso8601_datetime_str,
+                not_none,
+                ),
+            state = pipe(
+                test_isinstance(basestring),
+                test_equals('active'),
+                ),
+            supplier = test_isinstance(dict),
+            supplier_id = cow_json_to_uuid,
+            tags = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                name = pipe(
+                                    cow_json_to_name,
+                                    not_none,
+                                    ),
+                                ),
+                            default = noop,
+                            ),
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
+                ),
+            temporal_coverage_from = pipe(
+                cow_json_to_year_or_month_or_day_str,
+                not_none,
+                ),
+            temporal_coverage_to = pipe(
+                cow_json_to_year_or_month_or_day_str,
+                not_none,
+                ),
+            territorial_coverage = pipe(
+                test_isinstance(basestring),
+                function(lambda value: value.split(',')),
+                uniform_sequence(
+                    pipe(
+                        empty_to_none,
+                        test(lambda value: value.count('/') == 1, error = N_(u'Invalid territory')),
+                        function(lambda value: value.split('/')),
+                        struct(
+                            [
+                                pipe(
+                                    empty_to_none,
+                                    test_in(
+                                        [
+                                            u'ArrondissementOfFrance',
+                                            u'AssociatedCommuneOfFrance',
+                                            u'CantonalFractionOfCommuneOfFrance',
+                                            u'CantonCityOfFrance',
+                                            u'CantonOfFrance',
+                                            u'CatchmentAreaOfFrance',
+                                            u'CommuneOfFrance',
+                                            u'Country',
+                                            u'DepartmentOfFrance',
+                                            u'EmploymentAreaOfFrance',
+                                            u'IntercommunalityOfFrance',
+                                            u'InternationalOrganization',
+                                            u'JusticeAreaOfFrance',
+                                            u'MetropoleOfCountry',
+                                            u'Mountain',
+                                            u'OverseasCollectivityOfFrance',
+                                            u'OverseasOfCountry',
+                                            u'PaysOfFrance',
+                                            u'RegionalNatureParkOfFrance',
+                                            u'RegionOfFrance',
+                                            u'UrbanAreaOfFrance',
+                                            u'UrbanTransportsPerimeterOfFrance',
+                                            u'UrbanUnitOfFrance',
+                                            ],
+                                        error = N_(u'Invalid territory type'),
+                                        ),
+                                    not_none
+                                    ),
+                                pipe(
+                                    empty_to_none,
+                                    not_none
+                                    ),
+                                ],
+                            ),
+                        not_none
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
+                ),
+            territorial_coverage_granularity = pipe(
+                test_isinstance(basestring),
+                test_in([
+                    u'canton',
+                    u'commune',
+                    u'department',
+                    u'epci',
+                    u'france',
+                    u'iris',
+                    u'poi',
+                    u'region',
+                    ]),
+                not_none,
+                ),
+            title = pipe(
+                cow_json_to_title,
+                test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
+                test(lambda title: year_re.search(title) is None, error = N_(u'String contains a year')),
+                not_none,
+                ),
+            tracking_summary = test_isinstance(dict),
+            type = pipe(
+                test_isinstance(basestring),
+                test_equals('dataset'),
+                ),
+            url = pipe(
+                test_isinstance(basestring),
+                make_input_to_url(full = True),
+                test_none(),
+                ),
+            version = pipe(
+                test_isinstance(basestring),
+                cleanup_line,
+                test_none(),
+                ),
+            ),
+        ),
+    )
+
 
 # Functions
 
@@ -300,420 +718,7 @@ def main():
             not_none,
             ))(response.read(), state = default_state)
 
-        verified_dataset, errors = struct(
-            dict(
-                author = cow_json_to_title,
-                author_email = input_to_email,
-                draft_id = pipe(
-                    cow_json_to_uuid,
-                    not_none,
-                    ),
-                errors = test_isinstance(dict),
-                extras = pipe(
-                    test_isinstance(list),
-                    uniform_sequence(
-                        pipe(
-                            test_isinstance(dict),
-                            struct(
-                                dict(
-                                    key = pipe(
-                                        cow_json_to_title,
-                                        not_none,
-                                        ),
-                                    value = pipe(
-                                        test_isinstance(basestring),
-                                        cleanup_line,
-                                        not_none,
-                                        ),
-                                    ),
-                                    default = noop,
-                                ),
-                            not_none,
-                            ),
-                        ),
-                    empty_to_none,
-                    ),
-                groups = pipe(
-                    test_isinstance(list),
-                    uniform_sequence(
-                        pipe(
-                            test_isinstance(dict),
-                            struct(
-                                dict(
-                                    id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    name = pipe(
-                                        cow_json_to_name,
-                                        not_none,
-                                        ),
-                                    title = pipe(
-                                        cow_json_to_title,
-                                        not_none,
-                                        ),
-                                    ),
-                                ),
-                            not_none,
-                            ),
-                        ),
-                    empty_to_none,
-                    not_none,
-                    ),
-                id = pipe(
-                    cow_json_to_uuid,
-                    not_none,
-                    ),
-                isopen = pipe(
-                    test_isinstance(bool),
-                    test_equals(True),
-                    not_none,
-                    ),
-                license_id = pipe(
-                    test_isinstance(basestring),
-                    test_in([
-                        'cc-by',  # Creative Commons Attribution
-                        'cc-by-sa',  # Creative Commons Attribution Share-Alike
-                        'cc-zero',  # Creative Commons CCZero
-                        'fr-lo',  # Licence Ouverte / Open Licence
-                        'odc-by',  # Open Data Commons Attribution License
-                        'odc-odbl',  # Open Data Commons Open Database License (ODbL)
-                        'odc-pddl',  # Open Data Commons Public Domain Dedication and Licence (PDDL)
-                        'other-at',  # Other (Attribution)
-                        'other-open',  # Other (Open)
-                        'other-pd',  # Other (Public Domain)
-                        ]),
-                    not_none,
-                    ),
-                license_title = pipe(
-                    test_isinstance(basestring),
-                    cleanup_line,
-                    not_none,
-                    ),
-                license_url = pipe(
-                    test_isinstance(basestring),
-                    make_input_to_url(full = True),
-                    not_none,
-                    ),
-                maintainer = cow_json_to_title,
-                maintainer_email = input_to_email,
-                metadata_created = pipe(
-                    cow_json_to_iso8601_date_str,
-                    not_none,
-                    ),
-                metadata_modified = pipe(
-                    cow_json_to_iso8601_date_str,
-                    not_none,
-                    ),
-                name = pipe(
-                    cow_json_to_name,
-                    not_none,
-                    ),
-                num_resources = pipe(
-                    test_isinstance(int),
-                    test_greater_or_equal(0),
-                    ),
-                num_tags = pipe(
-                    test_isinstance(int),
-                    test_greater_or_equal(0),
-                    ),
-                notes = pipe(
-                    cow_json_to_markdown,
-                    not_none,
-                    ),
-                organization = test_isinstance(dict),
-                owner_org = cow_json_to_uuid,
-                private = pipe(
-                    test_isinstance(bool),
-                    test_equals(False),
-                    ),
-                related = pipe(
-                    test_isinstance(list),
-                    uniform_sequence(
-                        pipe(
-                            test_isinstance(dict),
-                            struct(
-                                dict(
-                                    created = pipe(
-                                        cow_json_to_iso8601_datetime_str,
-                                        not_none,
-                                        ),
-                                    description = pipe(
-                                        cow_json_to_markdown,
-                                        not_none,
-                                        ),
-                                    featured = pipe(
-                                        test_isinstance(bool),
-                                        test_equals(False),
-                                        not_none,
-                                        ),
-                                    id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    image_url = pipe(
-                                        test_isinstance(basestring),
-                                        make_input_to_url(full = True),
-                                        not_none,
-                                        ),
-                                    owner_id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    title = pipe(
-                                        cow_json_to_title,
-                                        test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
-                                        not_none,
-                                        ),
-                                    type = pipe(
-                                        test_isinstance(basestring),
-                                        cleanup_line,
-                                        test_in([
-                                            u'api',
-                                            u'application',
-                                            u'idea',
-                                            u'news_article',
-                                            u'paper',
-                                            u'post',
-                                            u'visualization',
-                                            ]),
-                                        ),
-                                    url = pipe(
-                                        test_isinstance(basestring),
-                                        make_input_to_url(full = True),
-                                        not_none,
-                                        ),
-                                    view_count = pipe(
-                                        test_isinstance(int),
-                                        test_greater_or_equal(0),
-                                        not_none,
-                                        ),
-                                    ),
-                                ),
-                            not_none,
-                            ),
-                        ),
-                    empty_to_none,
-                    ),
-                resources = pipe(
-                    test_isinstance(list),
-                    uniform_sequence(
-                        pipe(
-                            test_isinstance(dict),
-                            struct(
-                                dict(
-                                    created = pipe(
-                                        cow_json_to_iso8601_date_str,
-                                        not_none,
-                                        ),
-                                    description = pipe(
-                                        cow_json_to_markdown,
-                                        not_none,
-                                        ),
-                                    format = pipe(
-                                        test_isinstance(basestring),
-                                        test(lambda format: format == format.lower(),
-                                            error = N_(u'Format must contain only lowercase characters')),
-                                        test_not_in(['xlsx'], error = N_(u'Invalid format; use "xls" instead')),
-#                                        test_in([
-#                                            'XLS',
-#                                            ]),
-                                        not_none,
-                                        ),
-                                    id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    last_modified = cow_json_to_iso8601_date_str,
-                                    name = pipe(
-                                        cow_json_to_title,
-                                        not_none,
-                                        ),
-                                    position = pipe(
-                                        test_isinstance(int),
-                                        test_greater_or_equal(0),
-                                        not_none,
-                                        ),
-                                    resource_group_id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    revision_id = pipe(
-                                        cow_json_to_uuid,
-                                        not_none,
-                                        ),
-                                    revision_timestamp = pipe(
-                                        cow_json_to_iso8601_datetime_str,
-                                        not_none,
-                                        ),
-                                    state = pipe(
-                                        test_isinstance(basestring),
-                                        test_equals('active'),
-                                        ),
-                                    tracking_summary = pipe(
-                                        test_isinstance(dict),
-                                        struct(
-                                            dict(
-                                                recent = pipe(
-                                                    test_isinstance(int),
-                                                    test_greater_or_equal(0),
-                                                    not_none,
-                                                    ),
-                                                total = pipe(
-                                                    test_isinstance(int),
-                                                    test_greater_or_equal(0),
-                                                    not_none,
-                                                    ),
-                                                ),
-                                            ),
-                                        not_none,
-                                        ),
-                                    url = pipe(
-                                        test_isinstance(basestring),
-                                        make_input_to_url(full = True),
-                                        not_none,
-                                        ),
-                                    ),
-                                ),
-                            not_none,
-                            ),
-                        ),
-                    empty_to_none,
-                    not_none,
-                    ),
-                revision_id = pipe(
-                    cow_json_to_uuid,
-                    not_none,
-                    ),
-                revision_timestamp = pipe(
-                    cow_json_to_iso8601_datetime_str,
-                    not_none,
-                    ),
-                state = pipe(
-                    test_isinstance(basestring),
-                    test_equals('active'),
-                    ),
-                supplier = test_isinstance(dict),
-                supplier_id = cow_json_to_uuid,
-                tags = pipe(
-                    test_isinstance(list),
-                    uniform_sequence(
-                        pipe(
-                            test_isinstance(dict),
-                            struct(
-                                dict(
-                                    name = pipe(
-                                        cow_json_to_name,
-                                        not_none,
-                                        ),
-                                    ),
-                                default = noop,
-                                ),
-                            not_none,
-                            ),
-                        ),
-                    empty_to_none,
-                    not_none,
-                    ),
-                temporal_coverage_from = pipe(
-                    cow_json_to_year_or_month_or_day_str,
-                    not_none,
-                    ),
-                temporal_coverage_to = pipe(
-                    cow_json_to_year_or_month_or_day_str,
-                    not_none,
-                    ),
-                territorial_coverage = pipe(
-                    test_isinstance(basestring),
-                    function(lambda value: value.split(',')),
-                    uniform_sequence(
-                        pipe(
-                            empty_to_none,
-                            test(lambda value: value.count('/') == 1, error = N_(u'Invalid territory')),
-                            function(lambda value: value.split('/')),
-                            struct(
-                                [
-                                    pipe(
-                                        empty_to_none,
-                                        test_in(
-                                            [
-                                                u'ArrondissementOfFrance',
-                                                u'AssociatedCommuneOfFrance',
-                                                u'CantonalFractionOfCommuneOfFrance',
-                                                u'CantonCityOfFrance',
-                                                u'CantonOfFrance',
-                                                u'CatchmentAreaOfFrance',
-                                                u'CommuneOfFrance',
-                                                u'Country',
-                                                u'DepartmentOfFrance',
-                                                u'EmploymentAreaOfFrance',
-                                                u'IntercommunalityOfFrance',
-                                                u'InternationalOrganization',
-                                                u'JusticeAreaOfFrance',
-                                                u'MetropoleOfCountry',
-                                                u'Mountain',
-                                                u'OverseasCollectivityOfFrance',
-                                                u'OverseasOfCountry',
-                                                u'PaysOfFrance',
-                                                u'RegionalNatureParkOfFrance',
-                                                u'RegionOfFrance',
-                                                u'UrbanAreaOfFrance',
-                                                u'UrbanTransportsPerimeterOfFrance',
-                                                u'UrbanUnitOfFrance',
-                                                ],
-                                            error = N_(u'Invalid territory type'),
-                                            ),
-                                        not_none
-                                        ),
-                                    pipe(
-                                        empty_to_none,
-                                        not_none
-                                        ),
-                                    ],
-                                ),
-                            not_none
-                            ),
-                        ),
-                    empty_to_none,
-                    not_none,
-                    ),
-                territorial_coverage_granularity = pipe(
-                    test_isinstance(basestring),
-                    test_in([
-                        u'canton',
-                        u'commune',
-                        u'department',
-                        u'epci',
-                        u'france',
-                        u'iris',
-                        u'poi',
-                        u'region',
-                        ]),
-                    not_none,
-                    ),
-                title = pipe(
-                    cow_json_to_title,
-                    test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
-                    test(lambda title: year_re.search(title) is None, error = N_(u'String contains a year')),
-                    not_none,
-                    ),
-                tracking_summary = test_isinstance(dict),
-                type = pipe(
-                    test_isinstance(basestring),
-                    test_equals('dataset'),
-                    ),
-                url = pipe(
-                    test_isinstance(basestring),
-                    make_input_to_url(full = True),
-                    test_none(),
-                    ),
-                version = pipe(
-                    test_isinstance(basestring),
-                    cleanup_line,
-                    test_none(),
-                    ),
-                ),
-            )(dataset, state = default_state)
+        verified_dataset, errors = cow_json_to_verified_dataset(dataset, state = default_state)
 
         if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
             request_headers = headers.copy()
