@@ -40,7 +40,6 @@ import urllib2
 import urlparse
 
 from biryani1 import baseconv, custom_conv, jsonconv, states
-import fedmsg
 
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -85,86 +84,94 @@ cow_response_to_value = conv.pipe(
 # Functions
 
 
-def check_dataset_urls(dataset, state = None):
-    try:
-        errors = {}
-        url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(dataset.get('url'), state = state)
+def check_dataset_urls(dataset):
+    log.debug(u'Checking URLs of dataset "{}".'.format(dataset['name']))
+    errors = {}
+    url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(dataset.get('url'),
+        state = conv.default_state)
+    if error is not None:
+        errors['url'] = error
+
+    related_links_errors = errors.get('related') or {}
+    for related_link_index, related_link in enumerate(dataset.get('related') or []):
+        related_link_errors = related_links_errors.get(related_link_index) or {}
+
+        image_url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(
+            related_link.get('image_url'), state = conv.default_state)
         if error is not None:
-            errors['url'] = error
+            related_link_errors['image_url'] = error
 
-        related_links_errors = errors.get('related') or {}
-        for related_link_index, related_link in enumerate(dataset.get('related') or []):
-            related_link_index_str = str(related_link_index)
-            related_link_errors = related_links_errors.get(related_link_index_str) or {}
+        url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(related_link.get('url'),
+            state = conv.default_state)
+        if error is not None:
+            related_link_errors['url'] = error
 
-            image_url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(
-                related_link.get('image_url'), state = state)
-            if error is not None:
-                related_link_errors['image_url'] = error
+        if related_link_errors:
+            related_links_errors[related_link_index] = related_link_errors
+        else:
+            related_links_errors.pop(related_link_index, None)
+    if related_links_errors:
+        errors['related'] = related_links_errors
 
-            url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(related_link.get('url'),
-                state = state)
-            if error is not None:
-                related_link_errors['url'] = error
+    resources_errors = errors.get('resources') or {}
+    for resource_index, resource in enumerate(dataset.get('resources') or []):
+        resource_errors = resources_errors.get(resource_index) or {}
 
-            if related_link_errors:
-                related_links_errors[related_link_index_str] = related_link_errors
-            else:
-                related_links_errors.pop(related_link_index_str, None)
-        if related_links_errors:
-            errors['related'] = related_links_errors
+        url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(resource.get('url'),
+            state = conv.default_state)
+        if error is not None:
+            resource_errors['url'] = error
 
-        resources_errors = errors.get('resources') or {}
-        for resource_index, resource in enumerate(dataset.get('resources') or []):
-            resource_index_str = str(resource_index)
-            resource_errors = resources_errors.get(resource_index_str) or {}
+        if resource_errors:
+            resources_errors[resource_index] = resource_errors
+        else:
+            resources_errors.pop(resource_index, None)
+    if resources_errors:
+        errors['resources'] = resources_errors
 
-            url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(resource.get('url'),
-                state = state)
-            if error is not None:
-                resource_errors['url'] = error
+    if errors:
+        # Convert numeric keys to strings.
+        errors = json.loads(json.dumps(errors))
+    else:
+        errors = None
 
-            if resource_errors:
-                resources_errors[resource_index_str] = resource_errors
-            else:
-                resources_errors.pop(resource_index_str, None)
-        if resources_errors:
-            errors['resources'] = resources_errors
-
-        if not errors:
-            errors = None
-
-        if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
-            request_headers = headers.copy()
-            request_headers['Content-Type'] = 'application/json'
-            request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
-                'api/1/datasets/{}/errors'.format(dataset['id'])), headers = request_headers)
+    if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
+        log.info(u'Updating dataset "{}" errors.'.format(dataset['name']))
+        request_headers = headers.copy()
+        request_headers['Content-Type'] = 'application/json'
+        request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
+            'api/1/datasets/{}/errors'.format(dataset['id'])), headers = request_headers)
+        try:
+            response = urllib2.urlopen(request, json.dumps(dict(
+                api_key = conf['ckan_of_worms.api_key'],
+                author = app_name,
+                draft_id = dataset['draft_id'],
+                value = errors,
+                )))
+        except urllib2.HTTPError as response:
+            if response.code == 409:
+                # The dataset has been modified. Don't submit errors because we will be notified of the new dataset
+                #version.
+                log.info(u'Dataset "{}" has been modified. Errors are ignored.'.format(dataset['name']))
+                return
+            log.error(u'An error occured while setting dataset "{}" errors: {}'.format(dataset['name'], errors))
+            response_text = response.read()
             try:
-                response = urllib2.urlopen(request, json.dumps(dict(
-                    api_key = conf['ckan_of_worms.api_key'],
-                    author = app_name,
-                    draft_id = dataset['draft_id'],
-                    value = errors,
-                    )))
-            except urllib2.HTTPError as response:
-                if response.code == 409:
-                    # The dataset has been modified. Don't submit errors because we will be notified of the new dataset
-                    #version.
-                    log.info(u'Dataset "{}" has been modified. Errors are ignored.'.format(dataset['name']))
-                    return
-                log.error(u'An error occured while setting dataset "{}" errors: {}'.format(dataset['name'], errors))
-                response_text = response.read()
-                try:
-                    response_dict = json.loads(response_text)
-                except ValueError:
-                    log.error(response_text)
-                    raise
-                for key, value in response_dict.iteritems():
-                    print '{} = {}'.format(key, value)
+                response_dict = json.loads(response_text)
+            except ValueError:
+                log.error(response_text)
                 raise
-            else:
-                assert response.code == 200
-                conv.check(cow_response_to_value)(response.read(), state = conv.default_state)
+            for key, value in response_dict.iteritems():
+                print '{} = {}'.format(key, value)
+            raise
+        else:
+            assert response.code == 200
+            conv.check(cow_response_to_value)(response.read(), state = conv.default_state)
+
+
+def check_dataset_urls_in_thread(dataset):
+    try:
+        check_dataset_urls(dataset)
     except:
         log.exception(u'An exception occurred for {0}'.format(dataset))
     finally:
@@ -175,6 +182,7 @@ def main():
     parser = argparse.ArgumentParser(description = __doc__)
     parser.add_argument('config', help = 'path of configuration file')
     parser.add_argument('-c', '--thread-count', default = 1, help = 'max number of threads', type = int)
+    parser.add_argument('-f', '--fedmsg', action = 'store_true', help = 'poll fedmsg events')
     parser.add_argument('-v', '--verbose', action = 'store_true', help = 'increase output verbosity')
 
     global args
@@ -207,62 +215,82 @@ def main():
         conv.not_none,
         ))(dict(config_parser.items('CowBots-Check-URLs')), conv.default_state)
 
-    fedmsg_conf = conv.check(conv.struct(
-        dict(
-            environment = conv.pipe(
-                conv.empty_to_none,
-                conv.test_in(['dev', 'prod', 'stg']),
-                ),
-            modname = conv.pipe(
-                conv.empty_to_none,
-                conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
-                conv.default('ckan_of_worms'),
-                ),
-#            name = conv.pipe(
-#                conv.empty_to_none,
-#                conv.default('ckan_of_worms.{}'.format(hostname)),
-#                ),
-            topic_prefix = conv.pipe(
-                conv.empty_to_none,
-                conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
-                ),
-            ),
-        default = 'drop',
-        ))(dict(config_parser.items('fedmsg')))
-
     global headers
     headers = {
         'User-Agent': conf['user_agent'],
         }
 
-    # Read in the config from /etc/fedmsg.d/.
-    fedmsg_config = fedmsg.config.load_config([], None)
-    # Disable a warning about not sending.  We know.  We only want to tail.
-    fedmsg_config['mute'] = True
-    # Disable timing out so that we can tail forever.  This is deprecated
-    # and will disappear in future versions.
-    fedmsg_config['timeout'] = 0
-    # For the time being, don't require message to be signed.
-    fedmsg_config['validate_signatures'] = False
-    for key, value in fedmsg_conf.iteritems():
-        if value is not None:
-            fedmsg_config[key] = value
+    if args.fedmsg:
+        import fedmsg
 
-    expected_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
-    for name, endpoint, topic, message in fedmsg.tail_messages(**fedmsg_config):
-        if not topic.startswith(expected_topic_prefix):
-            log.debug(u'Ignoring message: {}, {}'.format(topic, name))
-            continue
-        kind, action = topic[len(expected_topic_prefix):].split('.')
-        if kind == 'dataset':
-            if action in ('create', 'update'):
-                while len(pool) >= args.thread_count:
-                    time.sleep(0.1)
-                pool.add(thread.start_new_thread(check_dataset_urls, (message['msg'],)))
+        fedmsg_conf = conv.check(conv.struct(
+            dict(
+                environment = conv.pipe(
+                    conv.empty_to_none,
+                    conv.test_in(['dev', 'prod', 'stg']),
+                    ),
+                modname = conv.pipe(
+                    conv.empty_to_none,
+                    conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    conv.default('ckan_of_worms'),
+                    ),
+#                name = conv.pipe(
+#                    conv.empty_to_none,
+#                    conv.default('ckan_of_worms.{}'.format(hostname)),
+#                    ),
+                topic_prefix = conv.pipe(
+                    conv.empty_to_none,
+                    conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    ),
+                ),
+            default = 'drop',
+            ))(dict(config_parser.items('fedmsg')))
+
+        # Read in the config from /etc/fedmsg.d/.
+        fedmsg_config = fedmsg.config.load_config([], None)
+        # Disable a warning about not sending.  We know.  We only want to tail.
+        fedmsg_config['mute'] = True
+        # Disable timing out so that we can tail forever.  This is deprecated
+        # and will disappear in future versions.
+        fedmsg_config['timeout'] = 0
+        # For the time being, don't require message to be signed.
+        fedmsg_config['validate_signatures'] = False
+        for key, value in fedmsg_conf.iteritems():
+            if value is not None:
+                fedmsg_config[key] = value
+
+        expected_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
+        for name, endpoint, topic, message in fedmsg.tail_messages(**fedmsg_config):
+            if not topic.startswith(expected_topic_prefix):
+                log.debug(u'Ignoring message: {}, {}'.format(topic, name))
+                continue
+            kind, action = topic[len(expected_topic_prefix):].split('.')
+            if kind == 'dataset':
+                if action in ('create', 'update'):
+                    while len(pool) >= args.thread_count:
+                        time.sleep(0.1)
+                    pool.add(thread.start_new_thread(check_dataset_urls_in_thread, (message['msg'],)))
+                else:
+                    log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
             else:
                 log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
-        else:
-            log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+    else:
+        request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'], 'api/1/datasets'), headers = headers)
+        response = urllib2.urlopen(request)
+        datasets_id = conv.check(conv.pipe(
+            cow_response_to_value,
+            conv.not_none,
+            ))(response.read(), state = conv.default_state)
+
+        for dataset_id in datasets_id:
+            request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
+                'api/1/datasets/{}'.format(dataset_id)), headers = headers)
+            response = urllib2.urlopen(request)
+            dataset = conv.check(conv.pipe(
+                cow_response_to_value,
+                conv.not_none,
+                ))(response.read(), state = conv.default_state)
+            check_dataset_urls(dataset)
 
     return 0
 
@@ -276,9 +304,9 @@ def validate_url(url, state = None):
     refresh = now + datetime.timedelta(minutes = 5)
     url_cache = cache_by_url.get(url)
     if url_cache is not None and url_cache['refresh'] > now:
-        log.info(u'Retrieving URL from cache: {}'.format(url))
+        log.debug(u'Retrieving URL from cache: {}'.format(url))
         return url, url_cache.get('error')
-    log.info(u'Checking URL: {}'.format(url))
+    log.debug(u'Checking URL: {}'.format(url))
     request = urllib2.Request(url.encode('utf-8'), headers = headers)
     try:
         response = urllib2.urlopen(request).read()

@@ -40,6 +40,7 @@ import urlparse
 from biryani1.baseconv import (
     check,
     cleanup_line,
+    default,
     empty_to_none,
     function,
     input_to_email,
@@ -67,7 +68,6 @@ from biryani1.jsonconv import (
     make_input_to_json,
     )
 from biryani1.states import default_state
-#import fedmsg
 
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -608,9 +608,51 @@ cow_json_to_verified_dataset = pipe(
 # Functions
 
 
+def check_dataset(dataset):
+    log.debug(u'Checking dataset "{}".'.format(dataset['name']))
+    verified_dataset, errors = cow_json_to_verified_dataset(dataset, state = default_state)
+    if errors is not None:
+        # Convert numeric keys to strings.
+        errors = json.loads(json.dumps(errors))
+
+    if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
+        log.info(u'Updating dataset "{}" errors.'.format(dataset['name']))
+        request_headers = headers.copy()
+        request_headers['Content-Type'] = 'application/json'
+        request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
+            'api/1/datasets/{}/errors'.format(dataset['id'])), headers = request_headers)
+        try:
+            response = urllib2.urlopen(request, json.dumps(dict(
+                api_key = conf['ckan_of_worms.api_key'],
+                author = app_name,
+                draft_id = dataset['draft_id'],
+                value = errors,
+                )))
+        except urllib2.HTTPError as response:
+            if response.code == 409:
+                # The dataset has been modified. Don't submit errors because we will be notified of the new dataset
+                #version.
+                log.info(u'Dataset "{}" has been modified. Errors are ignored.'.format(dataset['name']))
+                return
+            log.error(u'An error occured while setting dataset "{}" errors: {}'.format(dataset['name'], errors))
+            response_text = response.read()
+            try:
+                response_dict = json.loads(response_text)
+            except ValueError:
+                log.error(response_text)
+                raise
+            for key, value in response_dict.iteritems():
+                print '{} = {}'.format(key, value)
+            raise
+        else:
+            assert response.code == 200
+            check(cow_response_to_value)(response.read(), state = default_state)
+
+
 def main():
     parser = argparse.ArgumentParser(description = __doc__)
     parser.add_argument('config', help = 'path of configuration file')
+    parser.add_argument('-f', '--fedmsg', action = 'store_true', help = 'poll fedmsg events')
     parser.add_argument('-v', '--verbose', action = 'store_true', help = 'increase output verbosity')
 
     global args
@@ -643,114 +685,86 @@ def main():
         not_none,
         ))(dict(config_parser.items('CowBots-Check-Datasets')), default_state)
 
-#    fedmsg_conf = check(struct(
-#        dict(
-#            environment = pipe(
-#                empty_to_none,
-#                test_in(['dev', 'prod', 'stg']),
-#                ),
-#            modname = pipe(
-#                empty_to_none,
-#                test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
-#                default('ckan_of_worms'),
-#                ),
-##            name = pipe(
-##                empty_to_none,
-##                default('ckan_of_worms.{}'.format(hostname)),
-##                ),
-#            topic_prefix = pipe(
-#                empty_to_none,
-#                test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
-#                ),
-#            ),
-#        default = 'drop',
-#        ))(dict(config_parser.items('fedmsg')))
-
     global headers
     headers = {
         'User-Agent': conf['user_agent'],
         }
 
-#    # Read in the config from /etc/fedmsg.d/.
-#    fedmsg_config = fedmsg.config.load_config([], None)
-#    # Disable a warning about not sending.  We know.  We only want to tail.
-#    fedmsg_config['mute'] = True
-#    # Disable timing out so that we can tail forever.  This is deprecated
-#    # and will disappear in future versions.
-#    fedmsg_config['timeout'] = 0
-#    # For the time being, don't require message to be signed.
-#    fedmsg_config['validate_signatures'] = False
-#    for key, value in fedmsg_conf.iteritems():
-#        if value is not None:
-#            fedmsg_config[key] = value
+    if args.fedmsg:
+        import fedmsg
 
-#    expected_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
-#    for name, endpoint, topic, message in fedmsg.tail_messages(**fedmsg_config):
-#        if not topic.startswith(expected_topic_prefix):
-#            log.debug(u'Ignoring message: {}, {}'.format(topic, name))
-#            continue
-#        kind, action = topic[len(expected_topic_prefix):].split('.')
-#        if kind == 'dataset':
-#            if action in ('create', 'update'):
-#                while len(pool) >= args.thread_count:
-#                    time.sleep(0.1)
-#                pool.add(thread.start_new_thread(check_dataset_urls, (message['msg'],)))
-#            else:
-#                log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
-#        else:
-#            log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+        fedmsg_conf = check(struct(
+            dict(
+                environment = pipe(
+                    empty_to_none,
+                    test_in(['dev', 'prod', 'stg']),
+                    ),
+                modname = pipe(
+                    empty_to_none,
+                    test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    default('ckan_of_worms'),
+                    ),
+#                name = pipe(
+#                    empty_to_none,
+#                    default('ckan_of_worms.{}'.format(hostname)),
+#                    ),
+                topic_prefix = pipe(
+                    empty_to_none,
+                    test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    ),
+                ),
+            default = 'drop',
+            ))(dict(config_parser.items('fedmsg')))
 
-    request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'], 'api/1/datasets'), headers = headers)
-    response = urllib2.urlopen(request)
-    datasets_id = check(pipe(
-        cow_response_to_value,
-        cow_json_to_ids,
-        not_none,
-        ))(response.read(), state = default_state)
+        # Read in the config from /etc/fedmsg.d/.
+        fedmsg_config = fedmsg.config.load_config([], None)
+        # Disable a warning about not sending.  We know.  We only want to tail.
+        fedmsg_config['mute'] = True
+        # Disable timing out so that we can tail forever.  This is deprecated
+        # and will disappear in future versions.
+        fedmsg_config['timeout'] = 0
+        # For the time being, don't require message to be signed.
+        fedmsg_config['validate_signatures'] = False
+        for key, value in fedmsg_conf.iteritems():
+            if value is not None:
+                fedmsg_config[key] = value
 
-    for dataset_id in datasets_id:
-        request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
-            'api/1/datasets/{}'.format(dataset_id)), headers = headers)
+        expected_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
+        for name, endpoint, topic, message in fedmsg.tail_messages(**fedmsg_config):
+            if not topic.startswith(expected_topic_prefix):
+                log.debug(u'Ignoring message: {}, {}'.format(topic, name))
+                continue
+            kind, action = topic[len(expected_topic_prefix):].split('.')
+            if kind == 'dataset':
+                if action in ('create', 'update'):
+                    dataset = check(pipe(
+                        cow_json_to_dataset,
+                        not_none,
+                        ))(message['msg'], state = default_state)
+                    check_dataset(dataset)
+                else:
+                    log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+            else:
+                log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+    else:
+        request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'], 'api/1/datasets'), headers = headers)
         response = urllib2.urlopen(request)
-        dataset = check(pipe(
+        datasets_id = check(pipe(
             cow_response_to_value,
-            cow_json_to_dataset,
+            cow_json_to_ids,
             not_none,
             ))(response.read(), state = default_state)
 
-        verified_dataset, errors = cow_json_to_verified_dataset(dataset, state = default_state)
-
-        if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
-            request_headers = headers.copy()
-            request_headers['Content-Type'] = 'application/json'
+        for dataset_id in datasets_id:
             request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
-                'api/1/datasets/{}/errors'.format(dataset['id'])), headers = request_headers)
-            try:
-                response = urllib2.urlopen(request, json.dumps(dict(
-                    api_key = conf['ckan_of_worms.api_key'],
-                    author = app_name,
-                    draft_id = dataset['draft_id'],
-                    value = errors,
-                    )))
-            except urllib2.HTTPError as response:
-                if response.code == 409:
-                    # The dataset has been modified. Don't submit errors because we will be notified of the new dataset
-                    #version.
-                    log.info(u'Dataset "{}" has been modified. Errors are ignored.'.format(dataset['name']))
-                    return
-                log.error(u'An error occured while setting dataset "{}" errors: {}'.format(dataset['name'], errors))
-                response_text = response.read()
-                try:
-                    response_dict = json.loads(response_text)
-                except ValueError:
-                    log.error(response_text)
-                    raise
-                for key, value in response_dict.iteritems():
-                    print '{} = {}'.format(key, value)
-                raise
-            else:
-                assert response.code == 200
-                check(cow_response_to_value)(response.read(), state = default_state)
+                'api/1/datasets/{}'.format(dataset_id)), headers = headers)
+            response = urllib2.urlopen(request)
+            dataset = check(pipe(
+                cow_response_to_value,
+                cow_json_to_dataset,
+                not_none,
+                ))(response.read(), state = default_state)
+            check_dataset(dataset)
 
     return 0
 
