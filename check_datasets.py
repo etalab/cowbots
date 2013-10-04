@@ -578,6 +578,10 @@ cow_json_to_verified_dataset = pipe(
                     ]),
                 not_none,
                 ),
+            timestamp = pipe(
+                cow_json_to_iso8601_datetime_str,
+                not_none,
+                ),
             title = pipe(
                 cow_json_to_title,
                 test(lambda title: len(title) >= 8, error = N_(u'String is too short')),
