@@ -39,14 +39,14 @@ import time
 import urllib2
 import urlparse
 
-from biryani1 import baseconv, custom_conv, states
+from biryani1 import baseconv, custom_conv, jsonconv, states
 import fedmsg
 
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 cache_by_url = {}
 conf = None
-conv = custom_conv(baseconv, states)
+conv = custom_conv(baseconv, jsonconv, states)
 headers = None
 log = logging.getLogger(app_name)
 pool = set()
@@ -56,7 +56,7 @@ pool = set()
 
 
 cow_response_to_value = conv.pipe(
-    conv.make_str_to_json(),
+    conv.make_input_to_json(),
     conv.not_none,
     conv.test_isinstance(dict),
     conv.struct(
@@ -113,8 +113,6 @@ def check_dataset_urls(dataset, state = None):
                 related_links_errors.pop(related_link_index_str, None)
         if related_links_errors:
             errors['related'] = related_links_errors
-        if not errors:
-            errors = None
 
         resources_errors = errors.get('resources') or {}
         for resource_index, resource in enumerate(dataset.get('resources') or []):
@@ -132,6 +130,7 @@ def check_dataset_urls(dataset, state = None):
                 resources_errors.pop(resource_index_str, None)
         if resources_errors:
             errors['resources'] = resources_errors
+
         if not errors:
             errors = None
 
@@ -206,7 +205,7 @@ def main():
             default = 'drop',
             ),
         conv.not_none,
-        ))(dict(config_parser.items('CowBots-Harvesters')), conv.default_state)
+        ))(dict(config_parser.items('CowBots-Check-URLs')), conv.default_state)
 
     fedmsg_conf = conv.check(conv.struct(
         dict(
@@ -266,43 +265,6 @@ def main():
             log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
 
     return 0
-
-
-def set_error(errors, key, (value, error)):
-    key_errors = errors.get(key) or []
-    if error is None:
-        for index, key_error in enumerate(key_errors):
-            if key_error.get('author') == app_name:
-                del key_errors[index]
-                if not key_errors:
-                    errors.pop(key, None)
-                return True
-    else:
-        now_str = datetime.datetime.utcnow().isoformat()
-        for index, key_error in enumerate(key_errors):
-            if key_error.get('author') == app_name:
-                if key_error.get('value') == value:
-                    if key_error.get('error') == error:
-                        return False
-                    key_error['error'] = error
-                else:
-                    key_error.update(dict(
-                        created = now_str,
-                        error = error,
-                        value = value,
-                        ))
-                return True
-        else:
-            if not key_errors:
-                errors[key] = key_errors
-            key_errors.append(dict(
-                author = app_name,
-                created = now_str,
-                error = error,
-                value = value,
-                ))
-            return True
-    return False
 
 
 def validate_url(url, state = None):
