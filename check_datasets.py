@@ -281,7 +281,6 @@ cow_json_to_verified_dataset = pipe(
             license_url = pipe(
                 test_isinstance(basestring),
                 make_input_to_url(full = True),
-                not_none,
                 ),
             maintainer = cow_json_to_title,
             maintainer_email = input_to_email,
