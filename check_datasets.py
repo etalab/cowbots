@@ -399,11 +399,11 @@ cow_json_to_verified_dataset = pipe(
                                     ),
                                 format = pipe(
                                     test_isinstance(basestring),
-                                    test(lambda format: format == format.lower(),
-                                        error = N_(u'Format must contain only lowercase characters')),
-                                    test_not_in(['xlsx'], error = N_(u'Invalid format; use "xls" instead')),
+                                    test(lambda format: format == format.upper(),
+                                        error = N_(u'Format must contain only uppercase characters')),
+                                    test_not_in(['XLSX'], error = N_(u'Invalid format; use "XLS" instead')),
 #                                    test_in([
-#                                        'xls',
+#                                        'XLS',
 #                                        ]),
                                     not_none,
                                     ),
