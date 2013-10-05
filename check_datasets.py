@@ -463,6 +463,18 @@ cow_json_to_verified_dataset = pipe(
                                     cow_json_to_uuid,
                                     not_none,
                                     ),
+                                resource_type = pipe(
+                                    test_isinstance(basestring),
+                                    test_in([
+                                        u'api',
+                                        # u'documentation',
+                                        u'file',
+                                        u'file.upload',
+                                        # u'image',
+                                        # u'metadata',
+                                        # u'visualization',
+                                        ]),
+                                    ),
                                 revision_id = pipe(
                                     cow_json_to_uuid,
                                     not_none,
