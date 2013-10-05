@@ -402,7 +402,8 @@ cow_json_to_verified_dataset = pipe(
                                     test_isinstance(basestring),
                                     test_conv(
                                         pipe(
-                                            function(lambda format: format.upper(),
+                                            function(lambda format: format.upper()),
+                                            test_not_in(['SVGZ'], error = N_(u'Invalid format; use "SVG" instead')),
                                             test_not_in(['XLSX'], error = N_(u'Invalid format; use "XLS" instead')),
                                             test_in([
                                                 u'CSV',
