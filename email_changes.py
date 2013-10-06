@@ -83,6 +83,29 @@ cow_response_to_value = conv.pipe(
 # Functions
 
 
+def account_created(account):
+    log.debug(u'Notifying account creation: "{}".'.format(u' - '.join(
+        fragment
+        for fragment in [
+            account.get('fullname'),
+            account.get('name'),
+            account.get('email'),
+            ]
+        if fragment is not None
+        )))
+    template = templates_lookup.get_template('new-account.mako')
+    message = template.render_unicode(
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        account = account,
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        weckan_url = conf['weckan.site_url'],
+        ).strip()
+    send_email(message)
+
+
 def dataset_created(dataset):
     log.debug(u'Notifying dataset creation: "{}".'.format(dataset['name']))
     template = templates_lookup.get_template('new-dataset.mako')
@@ -95,41 +118,22 @@ def dataset_created(dataset):
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
         ).strip()
-    # Rewrap message.
-    message_lines = []
-    in_header = True
-    for line in message.splitlines():
-        line = line.rstrip().replace(u' :', u' :').replace(u' [', u' [').replace(u'« ', u'« ').replace(
-            u' »', u' »')
-        if not line:
-            in_header = False
-        if in_header or len(line) <= 72:
-            message_lines.append(line)
-        else:
-            match = line_re.match(line)
-            assert match is not None
-            line_prefix = match.group('indent') + match.group('header')
-            line_len = len(line_prefix)
-            line_words = []
-            for word in match.group('content').split(' '):
-                if line_len > len(line_prefix) and line_len + len(word) > 72:
-                    message_lines.append(line_prefix + u' '.join(line_words))
-                    line_prefix = match.group('indent') + u' ' * len(match.group('header'))
-                    line_len = len(line_prefix)
-                    line_words = []
-                if line_len > 0:
-                    line_len += 1
-                line_len += len(word)
-                line_words.append(word)
-            if line_words:
-                message_lines.append(line_prefix + u' '.join(line_words))
-    message = u'\r\n'.join(message_lines).replace(u' ', u' ').encode('utf-8')
-    server = smtplib.SMTP('localhost')
-    try:
-        server.sendmail(conf['from_email'], conf['admin_email'], message)
-    except smtplib.SMTPRecipientsRefused:
-        log.exception(u'Skipping email to {0}, because an exception occurred:'.format(conf['admin_email']))
-    server.quit()
+    send_email(message)
+
+
+def group_created(group):
+    log.debug(u'Notifying group creation: "{}".'.format(group['name']))
+    template = templates_lookup.get_template('new-group.mako')
+    message = template.render_unicode(
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        group = group,
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        weckan_url = conf['weckan.site_url'],
+        ).strip()
+    send_email(message)
 
 
 def main():
@@ -246,13 +250,75 @@ def main():
                 log.debug(u'Ignoring message: {}, {}'.format(topic, name))
                 continue
             kind, action = topic[len(expected_topic_prefix):].split('.')
+            if kind == 'account':
+                if action == 'create':
+                    account_created(message['msg'])
             if kind == 'dataset':
                 if action == 'create':
                     dataset_created(message['msg'])
+            elif kind == 'group':
+                if action == 'create':
+                    group_created(message['msg'])
+            elif kind == 'organizaton':
+                if action == 'create':
+                    organizaton_created(message['msg'])
     else:
         pass  # TODO
 
     return 0
+
+
+def organization_created(organization):
+    log.debug(u'Notifying organization creation: "{}".'.format(organization['name']))
+    template = templates_lookup.get_template('new-organization.mako')
+    message = template.render_unicode(
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        organization = organization,
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        weckan_url = conf['weckan.site_url'],
+        ).strip()
+    send_email(message)
+
+
+def send_email(message):
+    # Rewrap message.
+    in_header = True
+    message_lines = []
+    for line in message.splitlines():
+        line = line.rstrip().replace(u' :', u' :').replace(u' [', u' [').replace(u'« ', u'« ').replace(
+            u' »', u' »')
+        if not line:
+            in_header = False
+        if in_header or len(line) <= 72:
+            message_lines.append(line)
+        else:
+            match = line_re.match(line)
+            assert match is not None
+            line_prefix = match.group('indent') + match.group('header')
+            line_len = len(line_prefix)
+            line_words = []
+            for word in match.group('content').split(' '):
+                if line_len > len(line_prefix) and line_len + len(word) > 72:
+                    message_lines.append(line_prefix + u' '.join(line_words))
+                    line_prefix = match.group('indent') + u' ' * len(match.group('header'))
+                    line_len = len(line_prefix)
+                    line_words = []
+                if line_len > 0:
+                    line_len += 1
+                line_len += len(word)
+                line_words.append(word)
+            if line_words:
+                message_lines.append(line_prefix + u' '.join(line_words))
+    message = u'\r\n'.join(message_lines).replace(u' ', u' ').encode('utf-8')
+    server = smtplib.SMTP('localhost')
+    try:
+        server.sendmail(conf['from_email'], conf['admin_email'], message)
+    except smtplib.SMTPRecipientsRefused:
+        log.exception(u'Skipping email to {0}, because an exception occurred:'.format(conf['admin_email']))
+    server.quit()
 
 
 def to_quoted_printable(s, encoding):
