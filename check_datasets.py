@@ -383,6 +383,8 @@ cow_json_to_verified_dataset = pipe(
                     ),
                 empty_to_none,
                 ),
+            relationships_as_object = test_none(),
+            relationships_as_subject = test_none(),
             resources = pipe(
                 test_isinstance(list),
                 uniform_sequence(
@@ -390,6 +392,8 @@ cow_json_to_verified_dataset = pipe(
                         test_isinstance(dict),
                         struct(
                             dict(
+                                cache_last_updated = test_none(),
+                                cache_url = test_none(),
                                 created = pipe(
                                     cow_json_to_iso8601_date_str,
                                     not_none,
@@ -446,11 +450,14 @@ cow_json_to_verified_dataset = pipe(
                                         error = N_(u'Format must contain only uppercase characters')),
                                     not_none,
                                     ),
+                                hash = test_none(),
                                 id = pipe(
                                     cow_json_to_uuid,
                                     not_none,
                                     ),
                                 last_modified = cow_json_to_iso8601_date_str,
+                                mimetype = test_none(),
+                                mimetype_inner = test_none(),
                                 name = pipe(
                                     cow_json_to_title,
                                     not_none,
@@ -484,6 +491,7 @@ cow_json_to_verified_dataset = pipe(
                                     cow_json_to_iso8601_datetime_str,
                                     not_none,
                                     ),
+                                size = test_none(),
                                 state = pipe(
                                     test_isinstance(basestring),
                                     test_equals('active'),
@@ -511,6 +519,8 @@ cow_json_to_verified_dataset = pipe(
                                     make_input_to_url(full = True),
                                     not_none,
                                     ),
+                                webstore_last_updated = test_none(),
+                                webstore_url = test_none(),
                                 ),
                             ),
                         not_none,
