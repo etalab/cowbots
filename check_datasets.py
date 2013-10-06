@@ -233,6 +233,7 @@ cow_json_to_verified_dataset = pipe(
                                     cow_json_to_uuid,
                                     not_none,
                                     ),
+                                description = cow_json_to_markdown,
                                 name = pipe(
                                     cow_json_to_name,
                                     not_none,
