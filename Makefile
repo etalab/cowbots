@@ -1,6 +1,6 @@
 .PHONY: flake8
 
 flake8:
-	rm -Rf cache/email-changes-templates/
+	rm -Rf cache/
 	flake8
 
