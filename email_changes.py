@@ -261,7 +261,7 @@ def main():
                     group_created(message['msg'])
             elif kind == 'organizaton':
                 if action == 'create':
-                    organizaton_created(message['msg'])
+                    organization_created(message['msg'])
     else:
         pass  # TODO
 
