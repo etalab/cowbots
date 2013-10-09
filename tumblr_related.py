@@ -27,6 +27,7 @@
 """Consume fedmsg messages from CKAN-of-Worms, check their URLs and send result to CKAN-of-Worms."""
 
 
+import anydbm
 import argparse
 import ConfigParser
 import logging
@@ -44,10 +45,10 @@ app_dir = os.path.dirname(os.path.abspath(__file__))
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 conf = None
 conv = custom_conv(baseconv, jsonconv, states)
+db = None
 headers = None
 log = logging.getLogger(app_name)
 oauth = None
-post_id_by_dataset_id = {}
 templates_lookup = None
 
 
@@ -134,8 +135,8 @@ def dataset_upserted(dataset):
         conf = conf,
         dataset = dataset,
         ).strip()
-    post_id = post_id_by_dataset_id.get(dataset['id'])
-    if post_id is None:
+    post_id_str = db.get(str(dataset['id']))
+    if post_id_str is None:
         response = requests.post('https://api.tumblr.com/v2/blog/{}/post'.format(conf['tumblr.hostname']),
             auth = oauth,
             data = dict(
@@ -153,14 +154,14 @@ def dataset_upserted(dataset):
             tumblr_response_to_id,
             conv.not_none,
             ))(response.text, state = conv.default_state)
-        post_id_by_dataset_id[dataset['id']] = post_id
+        db[str(dataset['id'])] = str(post_id)
     else:
         response = requests.post('https://api.tumblr.com/v2/blog/{}/post/edit'.format(conf['tumblr.hostname']),
             auth = oauth,
             data = dict(
                 body = body,
                 format = 'html',
-                id = post_id,
+                id = int(post_id_str),
                 slug = strings.slugify(dataset['name']),
                 state = 'published',
                 tags = 'opendata,dataviz',
@@ -230,6 +231,11 @@ def main():
     cache_dir = os.path.join(app_dir, 'cache')
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
+    data_dir = os.path.join(app_dir, 'data')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    global db
+    db = anydbm.open(os.path.join(data_dir, 'tumblr-posts'), 'c')
     global headers
     headers = {
         'User-Agent': conf['user_agent'],
