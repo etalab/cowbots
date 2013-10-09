@@ -129,32 +129,35 @@ def check_dataset_urls(dataset):
     if resources_errors:
         errors['resources'] = resources_errors
 
+    alerts = {}
     if errors:
-        # Convert numeric keys to strings.
-        errors = json.loads(json.dumps(errors))
-    else:
-        errors = None
+        alerts['error'] = json.loads(json.dumps(errors))  # Convert numeric keys to strings.
 
-    if ((dataset.get('errors') or {}).get(app_name) or {}).get('error') != errors:
-        log.info(u'Updating dataset "{}" errors.'.format(dataset['name']))
+    if alerts != dict(
+            (level, level_alerts[app_name]['error'])
+            for level, level_alerts in (dataset.get('alerts') or {}).iteritems()
+            if level_alerts.get(app_name)
+            ):
+        log.info(u'Updating dataset "{}" alerts.'.format(dataset['name']))
         request_headers = headers.copy()
         request_headers['Content-Type'] = 'application/json'
         request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'],
-            'api/1/datasets/{}/errors'.format(dataset['id'])), headers = request_headers)
+            'api/1/datasets/{}/alert'.format(dataset['id'])), headers = request_headers)
+        request_data = dict(
+            api_key = conf['ckan_of_worms.api_key'],
+            author = app_name,
+            draft_id = dataset['draft_id'],
+            )
+        request_data.update(alerts)
         try:
-            response = urllib2.urlopen(request, json.dumps(dict(
-                api_key = conf['ckan_of_worms.api_key'],
-                author = app_name,
-                draft_id = dataset['draft_id'],
-                value = errors,
-                )))
+            response = urllib2.urlopen(request, json.dumps(request_data))
         except urllib2.HTTPError as response:
             if response.code == 409:
-                # The dataset has been modified. Don't submit errors because we will be notified of the new dataset
+                # The dataset has been modified. Don't submit alerts because we will be notified of the new dataset
                 #version.
-                log.info(u'Dataset "{}" has been modified. Errors are ignored.'.format(dataset['name']))
+                log.info(u'Dataset "{}" has been modified. Alerts are ignored.'.format(dataset['name']))
                 return
-            log.error(u'An error occured while setting dataset "{}" errors: {}'.format(dataset['name'], errors))
+            log.error(u'An error occured while setting dataset "{}" alerts: {}'.format(dataset['name'], alerts))
             response_text = response.read()
             try:
                 response_dict = json.loads(response_text)
