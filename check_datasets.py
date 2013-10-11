@@ -187,7 +187,66 @@ cow_json_to_ids = pipe(
         ),
     )
 
-cow_json_to_verified_dataset = pipe(
+cow_json_to_error_verified_dataset = pipe(
+    test_isinstance(dict),
+    struct(
+        dict(
+            license_url = pipe(
+                test_isinstance(basestring),
+                make_input_to_url(full = True),
+                ),
+            related = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                image_url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    ),
+                                url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    ),
+                                ),
+                            default = noop,
+                            ),
+                        ),
+                    ),
+                empty_to_none,
+                ),
+            resources = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        test_isinstance(dict),
+                        struct(
+                            dict(
+                                url = pipe(
+                                    test_isinstance(basestring),
+                                    make_input_to_url(full = True),
+                                    not_none,
+                                    ),
+                                ),
+                            default = noop,
+                            ),
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
+                ),
+            url = pipe(
+                test_isinstance(basestring),
+                make_input_to_url(full = True),
+                ),
+            ),
+        default = noop,
+        ),
+    )
+
+cow_json_to_warning_verified_dataset = pipe(
     test_isinstance(dict),
     struct(
         dict(
@@ -280,10 +339,7 @@ cow_json_to_verified_dataset = pipe(
                 cleanup_line,
                 not_none,
                 ),
-            license_url = pipe(
-                test_isinstance(basestring),
-                make_input_to_url(full = True),
-                ),
+            license_url = noop,  # already tested by error validator
             maintainer = cow_json_to_title,
             maintainer_email = input_to_email,
             metadata_created = pipe(
@@ -340,11 +396,7 @@ cow_json_to_verified_dataset = pipe(
                                     cow_json_to_uuid,
                                     not_none,
                                     ),
-                                image_url = pipe(
-                                    test_isinstance(basestring),
-                                    make_input_to_url(full = True),
-                                    not_none,
-                                    ),
+                                image_url = not_none,  # already tested by error validator
                                 owner_id = pipe(
                                     cow_json_to_uuid,
                                     not_none,
@@ -367,11 +419,7 @@ cow_json_to_verified_dataset = pipe(
                                         u'visualization',
                                         ]),
                                     ),
-                                url = pipe(
-                                    test_isinstance(basestring),
-                                    make_input_to_url(full = True),
-                                    not_none,
-                                    ),
+                                url = not_none,  # already tested by error validator
                                 view_count = pipe(
                                     test_isinstance(int),
                                     test_greater_or_equal(0),
@@ -515,11 +563,7 @@ cow_json_to_verified_dataset = pipe(
                                         ),
                                     not_none,
                                     ),
-                                url = pipe(
-                                    test_isinstance(basestring),
-                                    make_input_to_url(full = True),
-                                    not_none,
-                                    ),
+                                url = noop,  # already tested by error validator
                                 webstore_last_updated = test_none(),
                                 webstore_url = test_none(),
                                 ),
@@ -528,7 +572,7 @@ cow_json_to_verified_dataset = pipe(
                         ),
                     ),
                 empty_to_none,
-                not_none,
+                # not_none,  # already tested by error validator
                 ),
             revision_id = pipe(
                 cow_json_to_uuid,
@@ -655,11 +699,7 @@ cow_json_to_verified_dataset = pipe(
                 test_isinstance(basestring),
                 test_equals('dataset'),
                 ),
-            url = pipe(
-                test_isinstance(basestring),
-                make_input_to_url(full = True),
-                test_none(),
-                ),
+            url = test_none(),  # already tested by error validator
             version = pipe(
                 test_isinstance(basestring),
                 cleanup_line,
@@ -679,9 +719,13 @@ cow_json_to_verified_dataset = pipe(
 
 def check_dataset(dataset):
     log.debug(u'Checking dataset "{}".'.format(dataset['name']))
-    verified_dataset, warnings = cow_json_to_verified_dataset(dataset, state = default_state)
+    error_verified_dataset, errors = cow_json_to_error_verified_dataset(dataset, state = default_state)
+    warning_verified_dataset, warnings = cow_json_to_warning_verified_dataset(error_verified_dataset,
+        state = default_state)
 
     alerts = {}
+    if errors:
+        alerts['error'] = json.loads(json.dumps(errors))  # Convert numeric keys to strings.
     if warnings:
         alerts['warning'] = json.loads(json.dumps(warnings))  # Convert numeric keys to strings.
 
