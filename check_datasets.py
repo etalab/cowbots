@@ -665,6 +665,10 @@ cow_json_to_verified_dataset = pipe(
                 cleanup_line,
                 test_none(),
                 ),
+            weight = pipe(
+                test_isinstance(float),
+                test_greater_or_equal(0),
+                ),
             ),
         ),
     )
