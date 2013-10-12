@@ -78,7 +78,7 @@ log = logging.getLogger(app_name)
 N_ = lambda message: message
 name_re = re.compile(ur'[-_\da-z]+$')
 uuid_re = re.compile(ur'[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$')
-year_or_month_or_day_re = re.compile(ur'[0-2]\d{3}(-(0[1-9]|1[0-2])(-([0-2][1-9]|3[0-1]))?)?$')
+year_or_month_or_day_re = re.compile(ur'[0-2]\d{3}(-(0[1-9]|1[0-2])(-([0-2]\d|3[0-1]))?)?$')
 year_re = re.compile(ur'(^|[^\d])(19|20)\d\d([^\d]|$)')
 
 
