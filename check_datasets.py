@@ -290,11 +290,12 @@ cow_json_to_warning_verified_dataset = pipe(
                     u"bimestrielle",
                     u"hebdomadaire",
                     u"mensuelle",
+                    u"quinquénale",
                     u"quotidienne",
                     u"semestrielle",
                     u"temps réel",
                     u"trimestrielle",
-                    ], error = N_(u"Invalid frequency value")),
+                    ], error = N_(u"Invalid frequency")),
                 not_none,
                 ),
             groups = pipe(
