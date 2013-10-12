@@ -281,6 +281,22 @@ cow_json_to_warning_verified_dataset = pipe(
                     ),
                 empty_to_none,
                 ),
+            frequency = pipe(
+                test_isinstance(basestring),
+                test_in([
+                    u"annuelle",
+                    u"au fil de l'eau",
+                    u"bimensuelle",
+                    u"bimestrielle",
+                    u"hebdomadaire",
+                    u"mensuelle",
+                    u"quotidienne",
+                    u"semestrielle",
+                    u"temps réel",
+                    u"trimestrielle",
+                    ], error = N_(u"Invalid frequency value")),
+                not_none,
+                ),
             groups = pipe(
                 test_isinstance(list),
                 uniform_sequence(
