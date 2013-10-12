@@ -78,6 +78,7 @@ log = logging.getLogger(app_name)
 N_ = lambda message: message
 name_re = re.compile(ur'[-_\da-z]+$')
 uuid_re = re.compile(ur'[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$')
+year_or_month_or_day_re = re.compile(ur'[0-2]\d{3}(-(0[1-9]|1[0-2])(-([0-2][1-9]|3[0-1]))?)?$')
 year_re = re.compile(ur'(^|[^\d])(19|20)\d\d([^\d]|$)')
 
 
@@ -126,8 +127,7 @@ cow_json_to_uuid = pipe(
 
 cow_json_to_year_or_month_or_day_str = pipe(
     test_isinstance(basestring),
-    iso8601_input_to_date,
-    date_to_iso8601_str,
+    test(year_or_month_or_day_re.match, error = N_(u'Invalid year or month or day')),
     )
 
 cow_response_to_value = pipe(
