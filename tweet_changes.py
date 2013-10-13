@@ -28,10 +28,13 @@
 
 
 import argparse
+import collections
 import ConfigParser
 import logging
 import os
 import sys
+import thread
+import time
 import urlparse
 
 from biryani1 import baseconv, custom_conv, jsonconv, netconv, states
@@ -43,6 +46,16 @@ conf = None
 conv = custom_conv(baseconv, jsonconv, netconv, states)
 headers = None
 log = logging.getLogger(app_name)
+messages = collections.deque()
+next_delays = {
+    0: 60,
+    60: 300,
+    300: 900,
+    900: 3600,
+    3600: 18000,
+    18000: 86400,
+    86400: 86400,  # Don't wait more than a day
+    }
 twitter_api = None
 
 
@@ -103,7 +116,7 @@ def dataset_created(dataset):
         urlparse.urljoin(conf['weckan.site_url'], 'dataset/{}'.format(dataset['name'])),
         title,
         )
-    send_tweet(message)
+    messages.append(message)
 
 
 def group_created(group):
@@ -117,7 +130,7 @@ def group_created(group):
         urlparse.urljoin(conf['weckan.site_url'], 'group/{}'.format(group['name'])),
         title,
         )
-    send_tweet(message)
+    messages.append(message)
 
 
 def main():
@@ -185,6 +198,7 @@ def main():
         access_token_secret = conf['twitter.access_token_secret'],
         )
     # print twitter_api.VerifyCredentials()
+    thread.start_new_thread(tweet_messages, ())
 
     if args.fedmsg:
         import fedmsg
@@ -260,14 +274,36 @@ def organization_created(organization):
         urlparse.urljoin(conf['weckan.site_url'], 'organization/{}'.format(organization['name'])),
         title,
         )
-    send_tweet(message)
+    messages.append(message)
 
 
-def send_tweet(message):
-    if message:
-#        if len(message) > 140:
-#            message = message[:139] + u'…'
-        print twitter_api.PostUpdate(message)
+def tweet_messages():
+    delay = 0
+    while True:
+        if not messages:
+            time.sleep(1.0)
+            continue
+        message = messages.popleft()
+        log.info(u'Tweeting: {}'.format(message))
+        if len(message) > 140:
+            cut_message = message[:139] + u'…'
+        else:
+            cut_message = message
+        try:
+            log.info(u'    {}'.format(twitter_api.PostUpdate(cut_message)))
+        except twitter.TwitterError as e:
+            delay = next_delays[delay]
+            if 'Too many notices too fast;' in str(e):
+                # Reinject message into queue.
+                messages.appendleft(message)
+                log.warning(u'Twitter limit reached. Sleeping {}s'.format(delay))
+            else:
+                log.exception(u'An exception occurred while tweeting: {}. Message lost. Sleeping  {}s'.format(message,
+                    delay))
+            time.sleep(delay)
+        else:
+            # Tweet has been sucessfully sent. Reset delay for next tweet.
+            delay = 0
 
 
 if __name__ == '__main__':
