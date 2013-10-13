@@ -107,30 +107,20 @@ def account_created(account):
 
 def dataset_created(dataset):
     log.debug(u'Notifying dataset creation: "{}".'.format(dataset['name']))
-    message_template = u'Nouvelles données : {} {}'
-    message_length = len(message_template) - 4 + twitter_api.GetShortUrlLength()
-    title = dataset['title']
-    if message_length + len(title) > 140:
-        title = title[:140 - message_length - 1] + u'…'
-    message = message_template.format(
+    queue_message(
+        u'Nouvelles données : {} {}',
         urlparse.urljoin(conf['weckan.site_url'], 'dataset/{}'.format(dataset['name'])),
-        title,
+        dataset['title'],
         )
-    messages.append(message)
 
 
 def group_created(group):
     log.debug(u'Notifying group creation: "{}".'.format(group['name']))
-    message_template = u'Nouveau groupe : {} {}'
-    message_length = len(message_template) - 4 + twitter_api.GetShortUrlLength()
-    title = group['title']
-    if message_length + len(title) > 140:
-        title = title[:140 - message_length - 1] + u'…'
-    message = message_template.format(
+    queue_message(
+        u'Nouveau groupe : {} {}',
         urlparse.urljoin(conf['weckan.site_url'], 'group/{}'.format(group['name'])),
-        title,
+        group['title'],
         )
-    messages.append(message)
 
 
 def main():
@@ -265,16 +255,22 @@ def main():
 
 def organization_created(organization):
     log.debug(u'Notifying organization creation: "{}".'.format(organization['name']))
-    message_template = u'Nouvelle organisation : {} {}'
-    message_length = len(message_template) - 4 + twitter_api.GetShortUrlLength()
-    title = organization['title']
+    queue_message(
+        u'Nouvelle organisation : {} {}',
+        urlparse.urljoin(conf['weckan.site_url'], 'organization/{}'.format(organization['name'])),
+        organization['title'],
+        )
+
+
+def queue_message(template, url, title):
+    split_url = urlparse.urlsplit(url)
+    url_length = len(url) if split_url.netloc.startswith(('127.', 'localhost')) else twitter_api.GetShortUrlLength()
+    message_length = len(template) - 4 + url_length
     if message_length + len(title) > 140:
         title = title[:140 - message_length - 1] + u'…'
-    message = message_template.format(
-        urlparse.urljoin(conf['weckan.site_url'], 'organization/{}'.format(organization['name'])),
-        title,
-        )
+    message = template.format(url, title)
     messages.append(message)
+    return message
 
 
 def tweet_messages():
@@ -285,12 +281,8 @@ def tweet_messages():
             continue
         message = messages.popleft()
         log.info(u'Tweeting: {}'.format(message))
-        if len(message) > 140:
-            cut_message = message[:139] + u'…'
-        else:
-            cut_message = message
         try:
-            log.info(u'    {}'.format(twitter_api.PostUpdate(cut_message)))
+            log.info(u'    {}'.format(twitter_api.PostUpdate(message)))
         except twitter.TwitterError as e:
             delay = next_delays[delay]
             if 'Too many notices too fast;' in str(e):
