@@ -253,13 +253,13 @@ def main():
             if kind == 'account':
                 if action == 'create':
                     account_created(message['msg'])
-            if kind == 'dataset':
+            elif kind == 'dataset':
                 if action == 'create':
                     dataset_created(message['msg'])
             elif kind == 'group':
                 if action == 'create':
                     group_created(message['msg'])
-            elif kind == 'organizaton':
+            elif kind == 'organization':
                 if action == 'create':
                     organization_created(message['msg'])
     else:
