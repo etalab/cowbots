@@ -292,7 +292,7 @@ def tweet_messages():
             log.info(u'    {}'.format(twitter_api.PostUpdate(message)))
         except twitter.TwitterError as e:
             delay = next_delays[delay]
-            if 'Too many notices too fast;' in str(e):
+            if 'Too many notices too fast;' in str(e) or 'User is over daily status update limit.' in str(e):
                 # Reinject message into queue.
                 messages.appendleft(message)
                 log.warning(u'Twitter limit reached. Sleeping {}s'.format(delay))
