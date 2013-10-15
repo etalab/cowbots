@@ -129,6 +129,8 @@ tumblr_response_to_id = conv.pipe(
 
 
 def dataset_upserted(dataset):
+    if not dataset.get('related'):
+        return None
     log.debug(u'Updating dataset post in tumbler "{}".'.format(dataset['name']))
     template = templates_lookup.get_template('dataset.mako')
     body = template.render_unicode(
