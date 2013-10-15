@@ -77,6 +77,7 @@ headers = None
 log = logging.getLogger(app_name)
 N_ = lambda message: message
 name_re = re.compile(ur'[-_\da-z]+$')
+slug_re = re.compile(ur'[-\da-z]+$')
 uuid_re = re.compile(ur'[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$')
 year_or_month_or_day_re = re.compile(ur'[0-2]\d{3}(-(0[1-9]|1[0-2])(-([0-2]\d|3[0-1]))?)?$')
 year_re = re.compile(ur'(^|[^\d])(19|20)\d\d([^\d]|$)')
@@ -110,7 +111,19 @@ cow_json_to_name = pipe(
     test(lambda name: '--' not in name, error = N_(u'String contains duplicate "-"')),
     test(lambda name: '__' not in name, error = N_(u'String contains duplicate "_"')),
     test(lambda name: name.islower(), error = N_(u'String must contain only lowercase characters')),
-    test(name_re.match, error = N_(u'String must contain only "a"-"z", "-" & "_"')),
+    test(name_re.match, error = N_(u'String must contain only "a"-"z", "0"-"9", "-" & "_"')),
+    test(lambda name: len(name) <= 100, error = N_(u'String is too long')),
+    )
+
+cow_json_to_tag_name = pipe(
+    test_isinstance(basestring),
+    test(lambda name: name == name.strip(), error = N_(u'String begins or ends with spaces')),
+    test(lambda name: name == name.strip('-'), error = N_(u'String begins or ends with "-"')),
+    test(lambda name: '--' not in name, error = N_(u'String contains duplicate "-"')),
+    test(lambda name: name.islower(), error = N_(u'String must contain only lowercase characters')),
+    test(name_re.match, error = N_(u'String must contain only "a"-"z", "0"-"9" & "-"')),
+    test(lambda name: len(name) >= 2, error = N_(u'String is too short')),
+    test(lambda name: len(name) <= 100, error = N_(u'String is too long')),
     )
 
 cow_json_to_title = pipe(
@@ -285,7 +298,8 @@ cow_json_to_warning_verified_dataset = pipe(
                 test_isinstance(basestring),
                 test_in([
                     u"annuelle",
-                    u"au fil de l'eau",
+                    u"aucune",
+                    u"au fil de l'eau",  # realtime
                     u"bimensuelle",
                     u"bimestrielle",
                     u"hebdomadaire",
@@ -293,7 +307,7 @@ cow_json_to_warning_verified_dataset = pipe(
                     u"quinquénale",
                     u"quotidienne",
                     u"semestrielle",
-                    u"temps réel",
+                    u"triennale",
                     u"trimestrielle",
                     ], error = N_(u"Invalid frequency")),
                 not_none,
@@ -613,7 +627,7 @@ cow_json_to_warning_verified_dataset = pipe(
                         struct(
                             dict(
                                 name = pipe(
-                                    cow_json_to_name,
+                                    cow_json_to_tag_name,
                                     not_none,
                                     ),
                                 ),
