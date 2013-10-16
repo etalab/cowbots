@@ -480,7 +480,7 @@ cow_json_to_warning_verified_dataset = pipe(
                                     ),
                                 description = pipe(
                                     cow_json_to_markdown,
-                                    not_none,
+                                    # not_none,  Currently we accept when only a title is given.
                                     ),
                                 format = pipe(
                                     test_isinstance(basestring),
