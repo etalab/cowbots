@@ -487,6 +487,7 @@ cow_json_to_warning_verified_dataset = pipe(
                                     test_conv(
                                         pipe(
                                             function(lambda format: format.upper()),
+                                            test_not_in(['KMLZ'], error = N_(u'Invalid format; use "KML" instead')),
                                             test_not_in(['SVGZ'], error = N_(u'Invalid format; use "SVG" instead')),
                                             test_not_in(['XLSX'], error = N_(u'Invalid format; use "XLS" instead')),
                                             test_in([
@@ -526,8 +527,9 @@ cow_json_to_warning_verified_dataset = pipe(
                                                 ]),
                                             ),
                                         ),
-                                    test(lambda format: format == format.upper(),
-                                        error = N_(u'Format must contain only uppercase characters')),
+                                    # Don't test capitalization, because CKAN uses sometimes upper and lower characters.
+                                    # test(lambda format: format == format.upper(),
+                                    #     error = N_(u'Format must contain only uppercase characters')),
                                     not_none,
                                     ),
                                 hash = test_none(),
