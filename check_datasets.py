@@ -299,14 +299,15 @@ cow_json_to_warning_verified_dataset = pipe(
                 test_in([
                     u"annuelle",
                     u"aucune",
-                    u"au fil de l'eau",  # realtime
                     u"bimensuelle",
                     u"bimestrielle",
                     u"hebdomadaire",
                     u"mensuelle",
-                    u"quinquénale",
+                    u"ponctuelle",
+                    u"quinquennale",
                     u"quotidienne",
                     u"semestrielle",
+                    u"temps réel",
                     u"triennale",
                     u"trimestrielle",
                     ], error = N_(u"Invalid frequency")),
