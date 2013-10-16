@@ -730,7 +730,7 @@ cow_json_to_warning_verified_dataset = pipe(
                 test_isinstance(basestring),
                 test_equals('dataset'),
                 ),
-            url = test_none(),  # already tested by error validator
+            url = noop,  # already tested by error validator
             version = pipe(
                 test_isinstance(basestring),
                 cleanup_line,
