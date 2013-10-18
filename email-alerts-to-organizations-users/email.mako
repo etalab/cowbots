@@ -31,17 +31,17 @@ import urlparse
 
 From: ${from_email}
 To: ${u', '.join(to_emails)}
-Subject: ${u"[ALERTE data.gouv.fr] Défauts dans les données: {}".format(organization['title']) | qp}
+Subject: ${u"[ALERTE data.gouv.fr] Défauts dans les données : {}".format(organization['title']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Des défauts ont été signalés sur les jeux de données suivants de l'organization "${organization['title']}".
+Des défauts ont été signalés sur les jeux de données suivants de l'organisation "${organization['title']}".
 
 % for dataset in datasets:
 * ${dataset['title']}
 % endfor
 
-Vous pouvez voir la liste et le détail de ces défauts dans notre outil de suivi de qualité :
+Vous pouvez consulter ces problèmes, puis y remédier, ici :
 ${urlparse.urljoin(ckan_of_worms_url, 'admin/datasets?alerts=error&organization={}'.format(
     urllib.quote_plus(organization['title'].encode('utf-8'))))}
 
