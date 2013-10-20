@@ -33,6 +33,7 @@ import datetime
 import json
 import logging
 import os
+import socket
 import sys
 import thread
 import time
@@ -312,7 +313,11 @@ def validate_url(url, state = None):
     log.debug(u'Checking URL: {}'.format(url))
     request = urllib2.Request(url.encode('utf-8'), headers = headers)
     try:
-        response = urllib2.urlopen(request).read()
+        response = urllib2.urlopen(request, timeout = 60).read()
+    except socket.timeout as exception:
+        error = state._(u'A timeout error occured when trying to connect to the web server: {0}').format(exception)
+        cache_by_url[url] = dict(error = error, refresh = refresh)
+        return url, error
     except urllib2.HTTPError as response:
         if 200 <= response.code < 400:
             error = state._(u'An error occured when trying to connect to the web server: {0:d} {1}').format(
