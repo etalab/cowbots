@@ -496,6 +496,7 @@ cow_json_to_warning_verified_dataset = pipe(
                                                 u'DOC',
                                                 u'DXF',
                                                 u'GEOJSON',
+                                                u'GML',
                                                 u'GPX',
                                                 u'GTFS',
                                                 u'GZ',
