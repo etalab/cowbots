@@ -542,7 +542,10 @@ cow_json_to_warning_verified_dataset = pipe(
                                 mimetype = test_none(),
                                 mimetype_inner = test_none(),
                                 name = pipe(
-                                    cow_json_to_title,
+                                    test_isinstance(basestring),
+                                    test(lambda title: title == title.strip(),
+                                        error = N_(u'String begins or ends with spaces')),
+                                    empty_to_none,
                                     not_none,
                                     ),
                                 position = pipe(
