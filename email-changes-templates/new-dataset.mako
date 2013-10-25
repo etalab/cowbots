@@ -34,14 +34,8 @@ Subject: ${u"[data] Nouvelles données : {}".format(dataset['title']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Salut,
-
-Juste un petit mot pour te signaler qu'un nouveau jeu de données vient d'être créé :
+Un nouveau jeu de données vient d'être créé :
   ${dataset['title']}
 
 Pour le regarder :
   ${urlparse.urljoin(weckan_url, 'dataset/{}'.format(dataset['name']))}
-
-Bien cordialement,
-
-Etal Abbot, le gentil robot

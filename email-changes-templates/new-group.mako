@@ -34,14 +34,8 @@ Subject: ${u"[data] Nouveau groupe : {}".format(group['title']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Salut,
-
-Juste un petit mot pour te signaler qu'un nouveau groupe vient d'être créé :
+Un nouveau groupe vient d'être créé :
   ${group['title']}
 
 Pour le regarder :
   ${urlparse.urljoin(weckan_url, 'group/{}'.format(group['name']))}
-
-Bien cordialement,
-
-Etal Abbot, le gentil robot

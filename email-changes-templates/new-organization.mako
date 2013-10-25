@@ -34,14 +34,8 @@ Subject: ${u"[data] Nouvel organisme : {}".format(organization['title']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Salut,
-
-Juste un petit mot pour te signaler qu'un nouvel organisme vient d'être créé :
+Un nouvel organisme vient d'être créé :
   ${organization['title']}
 
 Pour le regarder :
   ${urlparse.urljoin(weckan_url, 'organization/{}'.format(organization['name']))}
-
-Bien cordialement,
-
-Etal Abbot, le gentil robot

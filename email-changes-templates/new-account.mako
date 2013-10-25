@@ -34,16 +34,10 @@ Subject: ${u"[data] Nouveau compte : {}".format(account['name']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Salut,
-
-Juste un petit mot pour te signaler qu'un nouveau compte utilisateur vient d'être créé :
+Un nouveau compte utilisateur vient d'être créé :
 * Nom complet : ${account.get('fullname') or u''}
 * Identifiant de connexion : ${account.get('name') or u''}
 * Courriel : ${account.get('email') or u''}
 
 Pour le regarder :
   ${urlparse.urljoin(weckan_url, 'user/{}'.format(account['name']))}
-
-Bien cordialement,
-
-Etal Abbot, le gentil robot
