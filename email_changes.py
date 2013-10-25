@@ -262,6 +262,9 @@ def main():
             elif kind == 'organization':
                 if action == 'create':
                     organization_created(message['msg'])
+            elif kind == 'related':
+                if action == 'create':
+                    related_created(message['msg'])
     else:
         pass  # TODO
 
@@ -277,6 +280,24 @@ def organization_created(organization):
         from_email = conf['from_email'],
         organization = organization,
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        weckan_url = conf['weckan.site_url'],
+        ).strip()
+    send_email(message)
+
+
+def related_created(related):
+    dataset = related['dataset']
+    log.debug(u'Notifying related link creation: "{}".'.format(dataset['name']))
+    template = templates_lookup.get_template('new-related.mako')
+    message = template.render_unicode(
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        dataset = dataset,
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        owner = related.get('owner'),
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        related = related,
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
         ).strip()
