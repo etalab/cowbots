@@ -646,14 +646,8 @@ cow_json_to_warning_verified_dataset = pipe(
                 empty_to_none,
                 not_none,
                 ),
-            temporal_coverage_from = pipe(
-                cow_json_to_year_or_month_or_day_str,
-                not_none,
-                ),
-            temporal_coverage_to = pipe(
-                cow_json_to_year_or_month_or_day_str,
-                not_none,
-                ),
+            temporal_coverage_from = cow_json_to_year_or_month_or_day_str,
+            temporal_coverage_to = cow_json_to_year_or_month_or_day_str,
             territorial_coverage = pipe(
                 test_isinstance(basestring),
                 function(lambda value: value.split(',')),
@@ -758,8 +752,18 @@ cow_json_to_warning_verified_dataset = pipe(
 def check_dataset(dataset):
     log.debug(u'Checking dataset "{}".'.format(dataset['name']))
     error_verified_dataset, errors = cow_json_to_error_verified_dataset(dataset, state = default_state)
+    if errors is None:
+        errors = {}
     warning_verified_dataset, warnings = cow_json_to_warning_verified_dataset(error_verified_dataset,
         state = default_state)
+    if warnings is None or 'frequency' not in warnings:
+        if warning_verified_dataset[u'frequency'] != u'temps réel':
+            warning_verified_dataset[u'temporal_coverage_from'], error = not_none(
+                warning_verified_dataset[u'temporal_coverage_from'], state = default_state)
+            if error is not None:
+                if warnings is None:
+                    warnings = {}
+                warnings[u'temporal_coverage_from'] = error
 
     alerts = {}
     if errors:
