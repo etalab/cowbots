@@ -453,6 +453,7 @@ Base de données générée automatiquement à partir du contenu de data.gouv.fr
                     if package['id'] == package_id:
                         # Avoid infinite loop.
                         continue
+                    log.info(u'Upserting package "{}".'.format(package['name']))
                     assert package.get('ckan_url') is None, package
                     package['ckan_url'] = urlparse.urljoin(conf['weckan.site_url'], '/dataset/{}'.format(package['name']))
 
@@ -484,6 +485,7 @@ Base de données générée automatiquement à partir du contenu de data.gouv.fr
                     if package['id'] == package_id:
                         # Avoid infinite loop.
                         continue
+                    log.info(u'Deleting package "{}".'.format(package))
                     request = urllib2.Request(urlparse.urljoin(conf['ckan.site_url'], '/api/3/action/datastore_delete'),
                         headers = ckan_headers)
                     try:
