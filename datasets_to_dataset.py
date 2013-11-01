@@ -126,8 +126,8 @@ def main():
             ))(response_dict['result'], state = conv.default_state)
 
     package.update(dict(
-        author = organization['title'],
-#        author_email = ,
+        author = u'Secrétariat général du Gouvernement',
+        author_email = u'bot@etalab2.fr',
         extras = [
             dict(
                 key = u"Date de production des données",
@@ -139,8 +139,6 @@ def main():
             dict(id = strings.slugify(u'État et collectivités')),
             ],
         license_id = u'fr-lo',
-        maintainer = u'Secrétariat général du Gouvernement',
-        maintainer_email = u'bot@etalab2.fr',
         name = package_name,
         notes = u"""Les jeux de données ouvertes collectés par la mission Etalab""",
         owner_org = organization['id'],
@@ -181,6 +179,8 @@ def main():
 #                )
 #            if len(tag_name) >= 2
 #            ],
+        territorial_coverage = u'Country/FR',
+        territorial_coverage_granularity = u'commune',
         title = package_title,
 #        type (string) – the type of the dataset (optional), IDatasetForm plugins associate themselves with different dataset types and provide custom dataset handling behaviour for these types
 #        url (string) – a URL for the dataset’s source (optional)
