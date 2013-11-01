@@ -87,7 +87,7 @@ def main():
             default = 'drop',
             ),
         conv.not_none,
-        ))(dict(config_parser.items('Etalab-CKAN-Scripts')), conv.default_state)
+        ))(dict(config_parser.items('CowBots-Datasets-to-Dataset')), conv.default_state)
 
     ckan_headers = {
         'Authorization': conf['ckan.api_key'],
