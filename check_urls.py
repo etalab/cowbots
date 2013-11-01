@@ -275,9 +275,9 @@ def main():
                         time.sleep(0.1)
                     pool.add(thread.start_new_thread(check_dataset_urls_in_thread, (message['msg'],)))
                 else:
-                    log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+                    log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
             else:
-                log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+                log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
     else:
         request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'], 'api/1/datasets'), headers = headers)
         response = urllib2.urlopen(request)

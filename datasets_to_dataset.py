@@ -511,7 +511,7 @@ Base de données générée automatiquement à partir du contenu de data.gouv.fr
                         assert response_dict['success'] is True
                         # delete = response_dict['result']
                 else:
-                    log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+                    log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
             else:
                 log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
     else:

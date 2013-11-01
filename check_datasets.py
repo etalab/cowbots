@@ -904,9 +904,9 @@ def main():
                         ))(message['msg'], state = default_state)
                     check_dataset(dataset)
                 else:
-                    log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+                    log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
             else:
-                log.warning(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
+                log.debug(u'TODO: Handle {}, {} for {}'.format(kind, action, message))
     else:
         request = urllib2.Request(urlparse.urljoin(conf['ckan_of_worms.site_url'], 'api/1/datasets'), headers = headers)
         response = urllib2.urlopen(request)
