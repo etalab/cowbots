@@ -37,6 +37,7 @@ import sys
 import urllib2
 import urlparse
 
+from biryani1 import strings
 from biryani1.baseconv import (
     check,
     cleanup_line,
@@ -113,6 +114,11 @@ cow_json_to_name = pipe(
     test(lambda name: name.islower(), error = N_(u'String must contain only lowercase characters')),
     test(name_re.match, error = N_(u'String must contain only "a"-"z", "0"-"9", "-" & "_"')),
     test(lambda name: len(name) <= 100, error = N_(u'String is too long')),
+    )
+
+cow_json_to_slug = pipe(
+    test_isinstance(basestring),
+    test(lambda slug: slug == strings.slugify(slug), error = N_(u'String is not a slug')),
     )
 
 cow_json_to_tag_name = pipe(
@@ -736,6 +742,17 @@ cow_json_to_warning_verified_dataset = pipe(
                 test_isinstance(basestring),
                 cleanup_line,
                 test_none(),
+                ),
+            words = pipe(
+                test_isinstance(list),
+                uniform_sequence(
+                    pipe(
+                        cow_json_to_slug,
+                        not_none,
+                        ),
+                    ),
+                empty_to_none,
+                not_none,
                 ),
             weight = pipe(
                 test_isinstance(float),
