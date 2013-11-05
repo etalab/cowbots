@@ -286,8 +286,8 @@ def organization_created(organization):
     send_email(message)
 
 
-def related_created(related):
-    dataset = related['dataset']
+def related_created(activity):
+    dataset = activity['target']
     log.debug(u'Notifying related link creation: "{}".'.format(dataset['name']))
     template = templates_lookup.get_template('new-related.mako')
     message = template.render_unicode(
@@ -295,9 +295,9 @@ def related_created(related):
         dataset = dataset,
         encoding = 'utf-8',
         from_email = conf['from_email'],
-        owner = related.get('owner'),
+        owner = activity.get('actor'),
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
-        related = related,
+        related = activity['object'],
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
         ).strip()
