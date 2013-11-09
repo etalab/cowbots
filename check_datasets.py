@@ -660,7 +660,7 @@ cow_json_to_warning_verified_dataset = pipe(
                 uniform_sequence(
                     pipe(
                         empty_to_none,
-                        test(lambda value: value.count('/') == 1, error = N_(u'Invalid territory')),
+                        test(lambda value: value.count('/') == 2, error = N_(u'Invalid territory')),
                         function(lambda value: value.split('/')),
                         struct(
                             [
@@ -694,6 +694,10 @@ cow_json_to_warning_verified_dataset = pipe(
                                             ],
                                         error = N_(u'Invalid territory type'),
                                         ),
+                                    not_none
+                                    ),
+                                pipe(
+                                    empty_to_none,
                                     not_none
                                     ),
                                 pipe(
