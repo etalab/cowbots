@@ -102,6 +102,7 @@ def account_created(account):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
 
@@ -117,6 +118,7 @@ def dataset_created(dataset):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
 
@@ -132,6 +134,7 @@ def group_created(group):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
 
@@ -181,6 +184,11 @@ def main():
                     conv.not_none,
                     ),
                 'weckan.site_url': conv.pipe(
+                    conv.make_input_to_url(error_if_fragment = True, error_if_path = True, error_if_query = True,
+                        full = True),
+                    conv.not_none,
+                    ),
+                'youckan.site_url': conv.pipe(
                     conv.make_input_to_url(error_if_fragment = True, error_if_path = True, error_if_query = True,
                         full = True),
                     conv.not_none,
@@ -282,6 +290,7 @@ def organization_created(organization):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
 
@@ -300,6 +309,7 @@ def related_created(activity):
         related = activity['object'],
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
 

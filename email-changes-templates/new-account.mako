@@ -40,4 +40,4 @@ Un nouveau compte utilisateur vient d'être créé :
 * Courriel : ${account.get('email') or u''}
 
 Pour le regarder :
-  ${urlparse.urljoin(weckan_url, 'user/{}'.format(account['name']))}
+  ${urlparse.urljoin(youckan_url, 'u/{}'.format(account['name']))}
