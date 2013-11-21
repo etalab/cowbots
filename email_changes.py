@@ -102,6 +102,24 @@ def account_created(account):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
+        youckan_url = conf['youckan.site_url'],
+        ).strip()
+    send_email(message)
+
+
+def article_edited(article):
+    log.debug(u'Notifying article update: "{}".'.format(article['title']))
+    template = templates_lookup.get_template('edit-article.mako')
+    message = template.render_unicode(
+        article = article,
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
         youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
@@ -118,6 +136,7 @@ def dataset_created(dataset):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
         youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
@@ -134,6 +153,7 @@ def group_created(group):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
         youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
@@ -184,6 +204,11 @@ def main():
                     conv.not_none,
                     ),
                 'weckan.site_url': conv.pipe(
+                    conv.make_input_to_url(error_if_fragment = True, error_if_path = True, error_if_query = True,
+                        full = True),
+                    conv.not_none,
+                    ),
+                'wiki.site_url': conv.pipe(
                     conv.make_input_to_url(error_if_fragment = True, error_if_path = True, error_if_query = True,
                         full = True),
                     conv.not_none,
@@ -261,6 +286,9 @@ def main():
             if kind == 'account':
                 if action == 'create':
                     account_created(message['msg'])
+            elif kind == 'article':
+                if action == 'edit':
+                    article_edited(message['msg'])
             elif kind == 'dataset':
                 if action == 'create':
                     dataset_created(message['msg'])
@@ -273,6 +301,9 @@ def main():
             elif kind == 'related':
                 if action == 'create':
                     related_created(message['msg'])
+            elif kind == 'upload':
+                if action == 'complete':
+                    upload_completed(message['msg'])
     else:
         pass  # TODO
 
@@ -290,6 +321,7 @@ def organization_created(organization):
         qp = lambda s: to_quoted_printable(s, 'utf-8'),
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
         youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
@@ -309,6 +341,7 @@ def related_created(activity):
         related = activity['object'],
         to_emails = conf['admin_email'],
         weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
         youckan_url = conf['youckan.site_url'],
         ).strip()
     send_email(message)
@@ -362,6 +395,23 @@ def to_quoted_printable(s, encoding):
             word = str(email.header.Header(word.encode(encoding), encoding))
         quoted_words.append(word)
     return ' '.join(quoted_words)
+
+
+def upload_completed(upload):
+    log.debug(u'Notifying upload completed: "{}".'.format(upload['title']))
+    template = templates_lookup.get_template('complete-upload.mako')
+    message = template.render_unicode(
+        ckan_of_worms_url = conf['ckan_of_worms.site_url'],
+        encoding = 'utf-8',
+        from_email = conf['from_email'],
+        qp = lambda s: to_quoted_printable(s, 'utf-8'),
+        to_emails = conf['admin_email'],
+        upload = upload,
+        weckan_url = conf['weckan.site_url'],
+        wiki_url = conf['wiki.site_url'],
+        youckan_url = conf['youckan.site_url'],
+        ).strip()
+    send_email(message)
 
 
 if __name__ == '__main__':
