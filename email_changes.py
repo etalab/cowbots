@@ -249,7 +249,8 @@ def main():
                     ),
                 modname = conv.pipe(
                     conv.empty_to_none,
-                    conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    conv.test(lambda value: value == value.strip('.'),
+                        error = 'Value must not begin or end with a "."'),
                     conv.default('ckan_of_worms'),
                     ),
 #                name = conv.pipe(
@@ -258,7 +259,8 @@ def main():
 #                    ),
                 topic_prefix = conv.pipe(
                     conv.empty_to_none,
-                    conv.test(lambda value: value == value.strip('.'), error = 'Value must not begin or end with a "."'),
+                    conv.test(lambda value: value == value.strip('.'),
+                        error = 'Value must not begin or end with a "."'),
                     ),
                 ),
             default = 'drop',
@@ -277,33 +279,37 @@ def main():
             if value is not None:
                 fedmsg_config[key] = value
 
-        expected_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
+        ckan_of_worms_topic_prefix = '{}.{}.ckan_of_worms.'.format(fedmsg_config['topic_prefix'],
+            fedmsg_config['environment'])
+        wiki_topic_prefix = '{}.{}.wiki.'.format(fedmsg_config['topic_prefix'], fedmsg_config['environment'])
         for name, endpoint, topic, message in fedmsg.tail_messages(**fedmsg_config):
-            if not topic.startswith(expected_topic_prefix):
+            if topic.startswith(ckan_of_worms_topic_prefix):
+                kind, action = topic[len(ckan_of_worms_topic_prefix):].split('.')
+                if kind == 'account':
+                    if action == 'create':
+                        account_created(message['msg'])
+                elif kind == 'dataset':
+                    if action == 'create':
+                        dataset_created(message['msg'])
+                elif kind == 'group':
+                    if action == 'create':
+                        group_created(message['msg'])
+                elif kind == 'organization':
+                    if action == 'create':
+                        organization_created(message['msg'])
+                elif kind == 'related':
+                    if action == 'create':
+                        related_created(message['msg'])
+            elif topic.startswith(wiki_topic_prefix):
+                kind, action = topic[len(wiki_topic_prefix):].split('.')
+                if kind == 'article':
+                    if action == 'edit':
+                        article_edited(message['msg'])
+                elif kind == 'upload':
+                    if action == 'complete':
+                        upload_completed(message['msg'])
+            else:
                 log.debug(u'Ignoring message: {}, {}'.format(topic, name))
-                continue
-            kind, action = topic[len(expected_topic_prefix):].split('.')
-            if kind == 'account':
-                if action == 'create':
-                    account_created(message['msg'])
-            elif kind == 'article':
-                if action == 'edit':
-                    article_edited(message['msg'])
-            elif kind == 'dataset':
-                if action == 'create':
-                    dataset_created(message['msg'])
-            elif kind == 'group':
-                if action == 'create':
-                    group_created(message['msg'])
-            elif kind == 'organization':
-                if action == 'create':
-                    organization_created(message['msg'])
-            elif kind == 'related':
-                if action == 'create':
-                    related_created(message['msg'])
-            elif kind == 'upload':
-                if action == 'complete':
-                    upload_completed(message['msg'])
     else:
         pass  # TODO
 
