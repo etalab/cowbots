@@ -41,6 +41,6 @@ Auteur : ${article.get('user')}
 
 Résumé : ${article.get('summary')}
 
-Pour voir les modifications aportées :
+Pour voir les modifications apportées :
   ${article['url']}
 
