@@ -30,11 +30,11 @@ import urlparse
 
 From: ${from_email}
 To: ${u', '.join(to_emails)}
-Subject: ${u"[data] Nouvelle valorisation : {}".format(dataset['title']) | qp}
+Subject: ${u"[data] Nouvelle réutilisation : {}".format(dataset['title']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
-Une nouvelle valorisation du jeu de données vient d'être créée :
+Une nouvelle réutilisation du jeu de données vient d'être créée :
   ${dataset['title']}
 
 Titre : ${related.get('title') or u''}
