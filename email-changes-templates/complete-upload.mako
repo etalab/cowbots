@@ -30,12 +30,12 @@ import urlparse
 
 From: ${from_email}
 To: ${u', '.join(to_emails)}
-Subject: ${u"[wiki] Fichier déposé : {}".format(upload['title']) | qp}
+Subject: ${u"[wiki] Fichier déposé : {}".format(upload['title']['mTextform']) | qp}
 MIME-Version: 1.0
 Content-Type: text/plain; charset="${encoding}"
 
 Un fichier vient d'être déposé dans le Wiki :
-  ${upload['title']}
+  ${upload['title']['mTextform']}
 
 Type : ${upload.get('media_type')} / ${upload.get('mime')}
 
