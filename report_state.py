@@ -282,11 +282,11 @@ def send_stats():
     datasets_total_weight = sum(datasets_weight)
     global stats
     stats = dict(
-        datasets_average_weight = datasets_total_weight / len(datasets_weight),
+        datasets_average_weight = round(datasets_total_weight / len(datasets_weight), 2),
         datasets_count = len(metrics['datasets']),
-        datasets_median_weight = median(datasets_weight),
-        datasets_median_80_percent_weight = median_80_percent(datasets_weight),
-        datasets_total_weight = datasets_total_weight,
+        datasets_median_weight = round(median(datasets_weight), 2),
+#        datasets_median_80_percent_weight = median_80_percent(datasets_weight),
+        datasets_total_weight = round(datasets_total_weight, 2),
         formats_count = len(set(
             strings.slugify(resource['format'])
             for dataset in metrics['datasets'].itervalues()
