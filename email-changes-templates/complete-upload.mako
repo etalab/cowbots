@@ -46,5 +46,5 @@ Description: ${upload.get('description')}
 Auteur : ${upload.get('user_text')} / ${upload.get('user_id')}
 
 Pour le regarder :
-  ${upload['url']}
+  ${urlparse.urljoin(wiki_url, upload['url'])}
 
