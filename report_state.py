@@ -36,7 +36,7 @@ import sys
 import urllib2
 import urlparse
 
-from biryani1 import baseconv, custom_conv, jsonconv, states
+from biryani1 import baseconv, custom_conv, jsonconv, states, strings
 import fedmsg
 
 
@@ -261,6 +261,15 @@ def median(values):
     return sorted_values[quotient]
 
 
+def median_80_percent(values):
+    sorted_values = sorted(values)
+    values_count = len(sorted_values)
+    quotient, remainder = divmod(values_count, 2)
+    if remainder == 0:
+        return (sorted_values[quotient - 1] + sorted_values[quotient]) / 2.0
+    return sorted_values[quotient]
+
+
 def send_stats():
     datasets_weight = [
         weight
@@ -273,38 +282,29 @@ def send_stats():
     datasets_total_weight = sum(datasets_weight)
     global stats
     stats = dict(
-        datasets = dict(
-            average_weight = datasets_total_weight / len(datasets_weight),
-            count = len(metrics['datasets']),
-            median_weight = median(datasets_weight),
-            total_weight = datasets_total_weight,
+        datasets_average_weight = datasets_total_weight / len(datasets_weight),
+        datasets_count = len(metrics['datasets']),
+        datasets_median_weight = median(datasets_weight),
+        datasets_median_80_percent_weight = median_80_percent(datasets_weight),
+        datasets_total_weight = datasets_total_weight,
+        formats_count = len(set(
+            strings.slugify(resource['format'])
+            for dataset in metrics['datasets'].itervalues()
+            for resource in dataset['resources']
+            )),
+        organizations_count = len(metrics['organizations']),
+        organizations_public_services_count = sum(
+            1
+            for organization in metrics['organizations'].itervalues()
+            if organization['public_service']
             ),
-        formats = dict(
-            count = len(set(
-                resource['format']
-                for dataset in metrics['datasets'].itervalues()
-                for resource in dataset['resources']
-                )),
+        related_count = sum(
+            dataset['related_count']
+            for dataset in metrics['datasets'].itervalues()
             ),
-        organizations = dict(
-            count = len(metrics['organizations']),
-            public_services_count = sum(
-                1
-                for organization in metrics['organizations'].itervalues()
-                if organization['public_service']
-                ),
-            ),
-        related = dict(
-            count = sum(
-                dataset['related_count']
-                for dataset in metrics['datasets'].itervalues()
-                )
-            ),
-        resources = dict(
-            count = sum(
-                len(dataset['resources'])
-                for dataset in metrics['datasets'].itervalues()
-                )
+        resources_count = sum(
+            len(dataset['resources'])
+            for dataset in metrics['datasets'].itervalues()
             ),
         )
 
