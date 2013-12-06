@@ -720,6 +720,7 @@ cow_json_to_warning_verified_dataset = pipe(
                     u'department',
                     u'epci',
                     u'iris',
+                    u'other',
                     u'pays',
                     u'poi',
                     u'region',
