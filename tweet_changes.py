@@ -268,9 +268,9 @@ def queue_message(template, url, title):
     split_url = urlparse.urlsplit(url)
 
     # TO remove when site is announced: Remove scheme and network location from URL.
-    split_url = list(split_url)
-    split_url[0:2] = [u'', u'']
-    url = urlparse.urlunsplit(split_url)
+    # split_url = list(split_url)
+    # split_url[0:2] = [u'', u'']
+    # url = urlparse.urlunsplit(split_url)
 
     url_length = len(url) if not split_url[1] or split_url[1].startswith(('127.', 'localhost')) \
         else twitter_api.GetShortUrlLength()
