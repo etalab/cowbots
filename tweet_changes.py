@@ -109,7 +109,7 @@ def dataset_created(dataset):
     log.debug(u'Notifying dataset creation: "{}".'.format(dataset['name']))
     queue_message(
         u'Nouvelles données : {} {}',
-        urlparse.urljoin(conf['weckan.site_url'], 'dataset/{}'.format(dataset['name'])),
+        urlparse.urljoin(conf['weckan.site_url'], 'fr/dataset/{}'.format(dataset['name'])),
         dataset['title'],
         )
 
@@ -118,7 +118,7 @@ def group_created(group):
     log.debug(u'Notifying group creation: "{}".'.format(group['name']))
     queue_message(
         u'Nouveau groupe : {} {}',
-        urlparse.urljoin(conf['weckan.site_url'], 'group/{}'.format(group['name'])),
+        urlparse.urljoin(conf['weckan.site_url'], 'fr/group/{}'.format(group['name'])),
         group['title'],
         )
 
@@ -259,7 +259,7 @@ def organization_created(organization):
     log.debug(u'Notifying organization creation: "{}".'.format(organization['name']))
     queue_message(
         u'Nouvelle organisation : {} {}',
-        urlparse.urljoin(conf['weckan.site_url'], 'organization/{}'.format(organization['name'])),
+        urlparse.urljoin(conf['weckan.site_url'], 'fr/organization/{}'.format(organization['name'])),
         organization['title'],
         )
 
