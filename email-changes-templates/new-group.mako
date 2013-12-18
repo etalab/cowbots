@@ -38,4 +38,4 @@ Un nouveau groupe vient d'être créé :
   ${group['title']}
 
 Pour le regarder :
-  ${urlparse.urljoin(weckan_url, 'group/{}'.format(group['name']))}
+  ${urlparse.urljoin(weckan_url, 'fr/group/{}'.format(group['name']))}

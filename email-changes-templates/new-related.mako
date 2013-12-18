@@ -52,4 +52,4 @@ Auteur :
 % endif
 
 Pour la regarder :
-  ${urlparse.urljoin(weckan_url, 'dataset/{}'.format(dataset['name']))}
+  ${urlparse.urljoin(weckan_url, 'fr/dataset/{}'.format(dataset['name']))}

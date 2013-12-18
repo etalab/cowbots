@@ -38,4 +38,4 @@ Un nouveau jeu de données vient d'être créé :
   ${dataset['title']}
 
 Pour le regarder :
-  ${urlparse.urljoin(weckan_url, 'dataset/{}'.format(dataset['name']))}
+  ${urlparse.urljoin(weckan_url, 'fr/dataset/{}'.format(dataset['name']))}

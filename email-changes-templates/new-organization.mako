@@ -38,4 +38,4 @@ Un nouvel organisme vient d'être créé :
   ${organization['title']}
 
 Pour le regarder :
-  ${urlparse.urljoin(weckan_url, 'organization/{}'.format(organization['name']))}
+  ${urlparse.urljoin(weckan_url, 'fr/organization/{}'.format(organization['name']))}
