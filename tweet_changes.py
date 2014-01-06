@@ -106,12 +106,13 @@ def account_created(account):
 
 
 def dataset_created(dataset):
-    log.debug(u'Notifying dataset creation: "{}".'.format(dataset['name']))
-    queue_message(
-        u'Nouvelles données : {} {}',
-        urlparse.urljoin(conf['weckan.site_url'], 'fr/dataset/{}'.format(dataset['name'])),
-        dataset['title'],
-        )
+    if not dataset.get('private', False):
+        log.debug(u'Notifying dataset creation: "{}".'.format(dataset['name']))
+        queue_message(
+            u'Nouvelles données : {} {}',
+            urlparse.urljoin(conf['weckan.site_url'], 'fr/dataset/{}'.format(dataset['name'])),
+            dataset['title'],
+            )
 
 
 def group_created(group):
