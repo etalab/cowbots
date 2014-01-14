@@ -341,7 +341,7 @@ cow_json_to_warning_verified_dataset = pipe(
                                     ),
                                 ),
                             ),
-                        not_none,
+#                        not_none,
                         ),
                     ),
                 empty_to_none,
