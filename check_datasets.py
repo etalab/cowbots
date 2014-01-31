@@ -353,7 +353,7 @@ cow_json_to_warning_verified_dataset = pipe(
                 ),
             isopen = pipe(
                 test_isinstance(bool),
-                test_equals(True),
+#                test_equals(True),
                 not_none,
                 ),
             license_id = pipe(
