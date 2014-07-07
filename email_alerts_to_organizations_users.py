@@ -238,7 +238,7 @@ def main():
             user
             for user in (organization.get('users') or [])
             if user.get('capacity') in ('admin', 'editor') and user.get('email') is not None
-                and not user['email'].endswith('@etalab2.fr')
+                and not user['email'].endswith(('@data.gouv.fr', '@etalab2.fr'))
             ]
         if users:
             users_email = [

@@ -129,7 +129,7 @@ def main():
 
     package.update(dict(
         author = u'Secrétariat général du Gouvernement',
-        author_email = u'bot@etalab2.fr',
+        author_email = u'bot@data.gouv.fr',
         extras = [
             dict(
                 key = u"Date de production des données",
