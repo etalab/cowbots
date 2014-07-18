@@ -212,7 +212,7 @@ cow_json_to_error_verified_dataset = pipe(
         dict(
             license_url = pipe(
                 test_isinstance(basestring),
-                make_input_to_url(full = True),
+                make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
                 ),
             related = pipe(
                 test_isinstance(list),
@@ -223,11 +223,11 @@ cow_json_to_error_verified_dataset = pipe(
                             dict(
                                 image_url = pipe(
                                     test_isinstance(basestring),
-                                    make_input_to_url(full = True),
+                                    make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
                                     ),
                                 url = pipe(
                                     test_isinstance(basestring),
-                                    make_input_to_url(full = True),
+                                    make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
                                     ),
                                 ),
                             default = noop,
@@ -245,7 +245,7 @@ cow_json_to_error_verified_dataset = pipe(
                             dict(
                                 url = pipe(
                                     test_isinstance(basestring),
-                                    make_input_to_url(full = True),
+                                    make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
                                     not_none,
                                     ),
                                 ),
@@ -258,7 +258,7 @@ cow_json_to_error_verified_dataset = pipe(
                 ),
             url = pipe(
                 test_isinstance(basestring),
-                make_input_to_url(full = True),
+                make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
                 ),
             ),
         default = noop,

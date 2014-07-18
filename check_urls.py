@@ -88,7 +88,10 @@ cow_response_to_value = conv.pipe(
 def check_dataset_urls(dataset):
     log.debug(u'Checking URLs of dataset "{}".'.format(dataset['name']))
     errors = {}
-    url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(dataset.get('url'),
+    url, error = conv.pipe(
+        conv.make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
+        validate_url,
+        )(dataset.get('url'),
         state = conv.default_state)
     if error is not None:
         errors['url'] = error
@@ -97,12 +100,17 @@ def check_dataset_urls(dataset):
     for related_link_index, related_link in enumerate(dataset.get('related') or []):
         related_link_errors = related_links_errors.get(related_link_index) or {}
 
-        image_url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(
-            related_link.get('image_url'), state = conv.default_state)
+        image_url, error = conv.pipe(
+            conv.make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
+            validate_url,
+            )(related_link.get('image_url'), state = conv.default_state)
         if error is not None:
             related_link_errors['image_url'] = error
 
-        url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(related_link.get('url'),
+        url, error = conv.pipe(
+            conv.make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
+            validate_url,
+            )(related_link.get('url'),
             state = conv.default_state)
         if error is not None:
             related_link_errors['url'] = error
@@ -118,7 +126,10 @@ def check_dataset_urls(dataset):
     for resource_index, resource in enumerate(dataset.get('resources') or []):
         resource_errors = resources_errors.get(resource_index) or {}
 
-        url, error = conv.pipe(conv.make_input_to_url(full = True), validate_url)(resource.get('url'),
+        url, error = conv.pipe(
+            conv.make_input_to_url(full = True, schemes = (u'ftp', u'ftps', u'http', u'https')),
+            validate_url,
+            )(resource.get('url'),
             state = conv.default_state)
         if error is not None:
             resource_errors['url'] = error
